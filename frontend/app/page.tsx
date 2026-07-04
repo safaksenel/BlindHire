@@ -132,7 +132,7 @@ export default function LandingPage(): React.JSX.Element {
             <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
           </Link>
           <Link
-            href="/hr/login"
+            href="/login?redirect=/hr/dashboard"
             id="cta-hr-panel"
             className="inline-flex items-center gap-2 rounded-xl border border-white/[0.1] bg-white/[0.03] px-7 py-3.5 text-sm font-semibold text-white/80 backdrop-blur-sm transition-all duration-300 hover:border-white/[0.2] hover:bg-white/[0.06] hover:text-white"
           >

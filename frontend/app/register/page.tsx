@@ -14,45 +14,40 @@ import {
   EyeOff,
   ArrowRight,
   Loader2,
+  AlertTriangle,
   ShieldCheck,
 } from "lucide-react";
 
-const registerSchema = z.object({
-  fullName: z
-    .string()
-    .min(3, "Ad soyad en az 3 karakter olmalıdır."),
-  email: z
-    .string()
-    .email("Geçerli bir e-posta adresi giriniz."),
-  password: z
-    .string()
-    .min(8, "Şifre en az 8 karakter olmalıdır.")
-    .regex(/[A-Z]/, "Şifre en az 1 büyük harf içermelidir.")
-    .regex(/[0-9]/, "Şifre en az 1 rakam içermelidir."),
-});
-
-interface CandidateRecord {
-  candidateId: number;
-  fullName: string;
-  email: string;
-  password: string;
-  techScore: number;
-  reliability: number;
-  registeredAt: string;
-}
+const registerSchema = z
+  .object({
+    fullName: z.string().min(3, "Ad soyad en az 3 karakter olmalıdır."),
+    email: z.string().email("Geçerli bir e-posta adresi giriniz."),
+    password: z
+      .string()
+      .min(8, "Şifre en az 8 karakter olmalıdır.")
+      .regex(/[A-Z]/, "Şifre en az 1 büyük harf içermelidir.")
+      .regex(/[0-9]/, "Şifre en az 1 rakam içermelidir."),
+    confirmPassword: z.string().min(1, "Şifre tekrarı zorunludur."),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Şifreler eşleşmiyor.",
+    path: ["confirmPassword"],
+  });
 
 interface FieldErrors {
   fullName?: string;
   email?: string;
   password?: string;
+  confirmPassword?: string;
 }
 
-export default function RegisterPage() {
+export default function RegisterPage(): React.JSX.Element {
   const router = useRouter();
 
   const [fullName, setFullName] = useState<string>("");
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
+  const [confirmPassword, setConfirmPassword] = useState<string>("");
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [globalError, setGlobalError] = useState<string>("");
@@ -64,8 +59,12 @@ export default function RegisterPage() {
     setGlobalError("");
     setIsLoading(true);
 
-    // Validate with Zod
-    const result = registerSchema.safeParse({ fullName, email, password });
+    const result = registerSchema.safeParse({
+      fullName,
+      email,
+      password,
+      confirmPassword,
+    });
 
     if (!result.success) {
       const errors: FieldErrors = {};
@@ -80,59 +79,34 @@ export default function RegisterPage() {
       return;
     }
 
-    await new Promise((resolve) => setTimeout(resolve, 600));
-
     try {
-      const raw = localStorage.getItem("agentichr_candidates");
-      const candidates: CandidateRecord[] = raw ? JSON.parse(raw) : [];
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fullName, email, password }),
+      });
 
-      // Duplicate check
-      const exists = candidates.some((c) => c.email === email);
-      if (exists) {
-        setGlobalError(
-          "Bu e-posta adresi ile zaten kayıtlı bir hesap bulunuyor."
-        );
-        setIsLoading(false);
-        return;
+      if (!response.ok) {
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.indexOf("application/json") !== -1) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || errorData.message || "Kayıt işlemi başarısız oldu.");
+        } else {
+          throw new Error("Sunucu ile bağlantı kurulamadı.");
+        }
       }
 
-      // Generate random data
-      const candidateId =
-        Math.floor(Math.random() * (99999 - 10000 + 1)) + 10000;
-      const techScore =
-        Math.round((Math.random() * (10 - 6) + 6) * 10) / 10;
-      const reliability =
-        Math.round((Math.random() * (100 - 88) + 88) * 10) / 10;
+      const data = await response.json();
 
-      const newCandidate: CandidateRecord = {
-        candidateId,
-        fullName,
-        email,
-        password,
-        techScore,
-        reliability,
-        registeredAt: new Date().toISOString(),
-      };
-
-      candidates.push(newCandidate);
-      localStorage.setItem(
-        "agentichr_candidates",
-        JSON.stringify(candidates)
-      );
-      localStorage.setItem(
-        "agentichr_current_user",
-        JSON.stringify(newCandidate)
-      );
-
-      router.push("/apply");
-    } catch {
-      setGlobalError("Bir hata oluştu. Lütfen tekrar deneyin.");
+      router.push("/login?registered=true");
+    } catch (err: any) {
+      setGlobalError(err.message || "Bir hata oluştu. Lütfen tekrar deneyin.");
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center bg-zinc-950 overflow-hidden">
+    <div className="relative min-h-screen flex items-center justify-center bg-zinc-950 overflow-hidden px-4">
       {/* Background Effects */}
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[550px] h-[550px] bg-violet-500/[0.07] rounded-full blur-[120px]" />
@@ -151,7 +125,7 @@ export default function RegisterPage() {
         initial={{ opacity: 0, y: 30, scale: 0.96 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
-        className="relative z-10 w-full max-w-md px-4"
+        className="relative z-10 w-full max-w-md my-12"
       >
         <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-xl p-8 shadow-2xl shadow-black/40">
           {/* Header */}
@@ -181,7 +155,7 @@ export default function RegisterPage() {
               animate={{ opacity: 1, y: 0 }}
               className="flex items-center gap-2.5 p-3 mb-6 rounded-xl bg-red-500/[0.08] border border-red-500/20"
             >
-              <ShieldCheck className="w-4 h-4 text-red-400 shrink-0" />
+              <AlertTriangle className="w-4 h-4 text-red-400 shrink-0" />
               <span className="text-sm text-red-300">{globalError}</span>
             </motion.div>
           )}
@@ -189,11 +163,7 @@ export default function RegisterPage() {
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* Full Name */}
-            <motion.div
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.2, duration: 0.4 }}
-            >
+            <div>
               <label className="block text-sm font-medium text-zinc-400 mb-2">
                 Ad Soyad
               </label>
@@ -213,14 +183,10 @@ export default function RegisterPage() {
                   {fieldErrors.fullName}
                 </p>
               )}
-            </motion.div>
+            </div>
 
             {/* Email */}
-            <motion.div
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.3, duration: 0.4 }}
-            >
+            <div>
               <label className="block text-sm font-medium text-zinc-400 mb-2">
                 E-posta
               </label>
@@ -240,14 +206,10 @@ export default function RegisterPage() {
                   {fieldErrors.email}
                 </p>
               )}
-            </motion.div>
+            </div>
 
             {/* Password */}
-            <motion.div
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.4, duration: 0.4 }}
-            >
+            <div>
               <label className="block text-sm font-medium text-zinc-400 mb-2">
                 Şifre
               </label>
@@ -307,7 +269,30 @@ export default function RegisterPage() {
                   1 rakam
                 </span>
               </div>
-            </motion.div>
+            </div>
+
+            {/* Confirm Password */}
+            <div>
+              <label className="block text-sm font-medium text-zinc-400 mb-2">
+                Şifreyi Onayla
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600" />
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  className="w-full pl-11 pr-4 py-3 rounded-xl bg-white/[0.015] border border-white/[0.06] text-white placeholder:text-zinc-600 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500/30 transition-all"
+                />
+              </div>
+              {fieldErrors.confirmPassword && (
+                <p className="mt-1.5 text-xs text-red-400">
+                  {fieldErrors.confirmPassword}
+                </p>
+              )}
+            </div>
 
             <motion.div
               initial={{ opacity: 0, y: 10 }}
@@ -349,18 +334,6 @@ export default function RegisterPage() {
               >
                 Giriş Yapın
               </Link>
-            </p>
-          </motion.div>
-
-          {/* Footer */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.7, duration: 0.5 }}
-            className="mt-6 pt-6 border-t border-white/[0.04] text-center"
-          >
-            <p className="text-xs text-zinc-600">
-              AgenticHR.ai — Yapay Zeka Destekli İK Platformu
             </p>
           </motion.div>
         </div>

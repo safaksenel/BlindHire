@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, FormEvent } from "react";
-import { useRouter } from "next/navigation";
+import { useState, FormEvent, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import {
@@ -13,18 +13,18 @@ import {
   AlertTriangle,
 } from "lucide-react";
 
-interface CandidateRecord {
-  candidateId: number;
-  fullName: string;
-  email: string;
-  password: string;
-  techScore: number;
-  reliability: number;
-  registeredAt: string;
+export default function CandidateLoginPage(): React.JSX.Element {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-zinc-950 flex items-center justify-center text-white">Yükleniyor...</div>}>
+      <LoginInner />
+    </Suspense>
+  );
 }
 
-export default function CandidateLoginPage() {
+function LoginInner(): React.JSX.Element {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectPath = searchParams.get("redirect");
 
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
@@ -36,34 +36,56 @@ export default function CandidateLoginPage() {
     setError("");
     setIsLoading(true);
 
-    await new Promise((resolve) => setTimeout(resolve, 600));
+    // Hardcoded Super Admin login check
+    if (email === "admin" && password === "admin") {
+      document.cookie = "auth_token=authenticated; path=/; SameSite=Lax";
+      document.cookie = "user_role=SUPER_ADMIN; path=/; SameSite=Lax";
+      router.push("/admin");
+      return;
+    }
 
     try {
-      const raw = localStorage.getItem("agentichr_candidates");
-      const candidates: CandidateRecord[] = raw ? JSON.parse(raw) : [];
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
 
-      const matched = candidates.find(
-        (c) => c.email === email && c.password === password
-      );
-
-      if (matched) {
-        localStorage.setItem(
-          "agentichr_current_user",
-          JSON.stringify(matched)
-        );
-        router.push("/apply");
-      } else {
-        setError("E-posta veya şifre hatalı.");
-        setIsLoading(false);
+      if (!response.ok) {
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.indexOf("application/json") !== -1) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || errorData.message || "E-posta veya şifre hatalı.");
+        } else {
+          throw new Error("Sunucu ile bağlantı kurulamadı.");
+        }
       }
-    } catch {
-      setError("Bir hata oluştu. Lütfen tekrar deneyin.");
+
+      const data = await response.json();
+
+      // Set auth cookies from successful login
+      document.cookie = `auth_token=authenticated; path=/; SameSite=Lax`;
+      document.cookie = `user_role=${data.role}; path=/; SameSite=Lax`;
+      if (data.id) document.cookie = `user_id=${data.id}; path=/; SameSite=Lax`;
+
+      // Redirect based on role or searchParam
+      if (redirectPath) {
+        router.push(redirectPath);
+      } else if (data.role === "SUPER_ADMIN") {
+        router.push("/admin");
+      } else if (data.role === "HR") {
+        router.push("/hr/dashboard");
+      } else {
+        router.push("/dashboard");
+      }
+    } catch (err: any) {
+      setError(err.message || "E-posta veya şifre hatalı.");
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center bg-zinc-950 overflow-hidden">
+    <div className="relative min-h-screen flex items-center justify-center bg-zinc-950 overflow-hidden px-4">
       {/* Background Effects */}
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[550px] h-[550px] bg-emerald-500/[0.07] rounded-full blur-[120px]" />
@@ -82,7 +104,7 @@ export default function CandidateLoginPage() {
         initial={{ opacity: 0, y: 30, scale: 0.96 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
-        className="relative z-10 w-full max-w-md px-4"
+        className="relative z-10 w-full max-w-md"
       >
         <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-xl p-8 shadow-2xl shadow-black/40">
           {/* Header */}
@@ -97,10 +119,10 @@ export default function CandidateLoginPage() {
             </div>
             <div className="text-center">
               <h1 className="text-2xl font-bold text-white tracking-tight">
-                Aday Girişi
+                Giriş Yap
               </h1>
               <p className="text-sm text-zinc-500 mt-1">
-                Başvurularınızı takip etmek için giriş yapın
+                Sisteme erişmek için kimlik bilgilerinizi girin
               </p>
             </div>
           </motion.div>
@@ -119,32 +141,24 @@ export default function CandidateLoginPage() {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-5">
-            <motion.div
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.25, duration: 0.4 }}
-            >
+            <div>
               <label className="block text-sm font-medium text-zinc-400 mb-2">
-                E-posta
+                Kullanıcı Adı veya E-posta
               </label>
               <div className="relative">
                 <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600" />
                 <input
-                  type="email"
+                  type="text"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="ornek@email.com"
+                  placeholder="ornek@email.com veya admin"
                   required
                   className="w-full pl-11 pr-4 py-3 rounded-xl bg-white/[0.015] border border-white/[0.06] text-white placeholder:text-zinc-600 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500/30 transition-all"
                 />
               </div>
-            </motion.div>
+            </div>
 
-            <motion.div
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.35, duration: 0.4 }}
-            >
+            <div>
               <label className="block text-sm font-medium text-zinc-400 mb-2">
                 Şifre
               </label>
@@ -159,7 +173,7 @@ export default function CandidateLoginPage() {
                   className="w-full pl-11 pr-4 py-3 rounded-xl bg-white/[0.015] border border-white/[0.06] text-white placeholder:text-zinc-600 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500/30 transition-all"
                 />
               </div>
-            </motion.div>
+            </div>
 
             <motion.div
               initial={{ opacity: 0, y: 10 }}
@@ -201,18 +215,6 @@ export default function CandidateLoginPage() {
               >
                 Kayıt Olun
               </Link>
-            </p>
-          </motion.div>
-
-          {/* Footer */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.65, duration: 0.5 }}
-            className="mt-6 pt-6 border-t border-white/[0.04] text-center"
-          >
-            <p className="text-xs text-zinc-600">
-              AgenticHR.ai — Yapay Zeka Destekli İK Platformu
             </p>
           </motion.div>
         </div>

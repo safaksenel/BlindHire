@@ -1,6 +1,6 @@
 "use client";
 
-import { use } from "react";
+import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Radar,
@@ -23,10 +23,12 @@ import {
   CheckCircle2,
   Clock,
   Hash,
+  Loader2,
+  FileText
 } from "lucide-react";
 
 /* ══════════════════════════════════════════════════════
-   TYPES & DATA
+   TYPES & DATA (Proctoring/Transcript are still UI mockups)
    ══════════════════════════════════════════════════════ */
 
 interface RadarDataPoint {
@@ -34,14 +36,6 @@ interface RadarDataPoint {
   readonly score: number;
   readonly fullMark: number;
 }
-
-const RADAR_DATA: readonly RadarDataPoint[] = [
-  { subject: "Algoritma", score: 82, fullMark: 100 },
-  { subject: "Mimari", score: 91, fullMark: 100 },
-  { subject: "Stres Yönetimi", score: 74, fullMark: 100 },
-  { subject: "İletişim", score: 88, fullMark: 100 },
-  { subject: "Güvenilirlik", score: 98, fullMark: 100 },
-] as const;
 
 type ProctorSeverity = "low" | "negligible" | "clean";
 
@@ -66,14 +60,10 @@ interface TranscriptLine {
 }
 
 const TRANSCRIPT: readonly TranscriptLine[] = [
-  { speaker: "ai", text: "Node.js'te event loop'un farklı fazlarını açıklayabilir misiniz?" },
-  { speaker: "candidate", text: "Tabii, event loop temel olarak altı fazdan oluşur: timers, pending callbacks, idle/prepare, poll, check ve close callbacks. Her faz kendi [SANSÜRLENDİ] callback kuyruğuna sahiptir." },
-  { speaker: "ai", text: "Bir production sisteminde memory leak tespit ettiğinizde ilk adımınız ne olur?" },
-  { speaker: "candidate", text: "Öncelikle [SANSÜRLENDİ] ile heap snapshot alırım. Ardından Chrome DevTools'un allocation timeline'ını kullanarak retained size'ı yüksek objeleri izole ederim. Özellikle closure'lar ve event listener'lar üzerinde [SANSÜRLENDİ] inceleme yaparım." },
-  { speaker: "ai", text: "Microservices mimarisinde servisler arası iletişimde hangi pattern'leri tercih edersiniz?" },
-  { speaker: "candidate", text: "Senkron iletişim için gRPC'yi, asenkron event-driven iletişim için ise [SANSÜRLENDİ] ile birlikte CQRS pattern'ini tercih ederim. Saga pattern'i de distributed transaction yönetiminde [SANSÜRLENDİ] olarak kullanıyorum." },
-  { speaker: "ai", text: "Concurrency limitleri altında rate-limiting stratejinizi anlatır mısınız?" },
-  { speaker: "candidate", text: "Token bucket ve sliding window algoritmalarını birlikte kullanırım. Redis üzerinde [SANSÜRLENDİ] ile atomic increment yaparak distributed ortamda tutarlı rate-limiting sağlarım." },
+  { speaker: "ai", text: "Önceki deneyimlerinizde karşılaştığınız en büyük teknik zorluk neydi?" },
+  { speaker: "candidate", text: "Büyük bir veri taşıma operasyonunda [SANSÜRLENDİ] downtime olmadan geçiş yapmamız gerekiyordu. Veritabanı replikasyonu ve dual-write stratejisi ile bu sorunu çözdük." },
+  { speaker: "ai", text: "Bu süreçte öğrendiğiniz en önemli ders neydi?" },
+  { speaker: "candidate", text: "Rollback planının en az deployment planı kadar detaylı olması gerektiği. Özellikle [SANSÜRLENDİ] aşamasında yaşanan bir darboğaz bizi bu konuda çok şey öğretti." },
 ] as const;
 
 const SEVERITY_STYLES: Record<ProctorSeverity, { dot: string; bg: string; text: string }> = {
@@ -117,6 +107,51 @@ interface CandidatePageProps {
 
 export default function CandidatePage({ params }: CandidatePageProps): React.JSX.Element {
   const { id } = use(params);
+  const [data, setData] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [showIdentity, setShowIdentity] = useState(false);
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const res = await fetch(`/api/hr/candidate/${id}`);
+        if (!res.ok) throw new Error("Aday bilgileri alınamadı.");
+        const json = await res.json();
+        setData(json);
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    void fetchData();
+  }, [id]);
+
+  if (isLoading) {
+    return (
+      <div className="flex h-full min-h-[400px] flex-col items-center justify-center space-y-4">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+        <p className="text-sm text-white/50">Scorecard yükleniyor...</p>
+      </div>
+    );
+  }
+
+  if (error || !data) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+        <div className="flex items-center gap-3 rounded-2xl border border-red-500/20 bg-red-500/10 p-6 text-red-400">
+          <AlertTriangle className="h-6 w-6" />
+          <p>{error || "Aday bulunamadı."}</p>
+        </div>
+        <Link href="/hr/pipeline" className="text-sm text-blue-400 hover:underline">
+          Hunisiye Dön
+        </Link>
+      </div>
+    );
+  }
+
+  const overallGrade = data.techScore >= 85 ? "A+" : data.techScore >= 70 ? "B" : "C";
 
   return (
     <div className="space-y-6">
@@ -137,42 +172,64 @@ export default function CandidatePage({ params }: CandidatePageProps): React.JSX
               <Hash className="h-4 w-4 text-blue-400" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-white">Aday #{id}</h1>
+              <h1 className="text-xl font-bold text-white">
+                {showIdentity ? data.fullName : `Aday #${data.id.substring(0, 5)}`}
+              </h1>
               <p className="text-sm text-white/30">
                 Başvurulan Pozisyon:{" "}
                 <span className="font-medium text-white/50">
-                  Senior Backend Developer
+                  {data.role}
                 </span>
               </p>
+              {showIdentity && (
+                  <p className="text-xs text-blue-400/80 mt-1">{data.email}</p>
+              )}
             </div>
           </div>
           <div className="flex items-center gap-2 pl-[52px]">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/15 bg-emerald-500/[0.06] px-3 py-1 text-[11px] font-medium text-emerald-400">
-              <CheckCircle2 className="h-3 w-3" />
-              Mülakat Tamamlandı
-            </span>
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.06] bg-white/[0.02] px-3 py-1 text-[11px] text-white/25">
-              <Clock className="h-3 w-3" />
-              14 dk 22 sn
+            <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] font-medium ${
+                data.status === "COMPLETED" 
+                    ? "border-emerald-500/15 bg-emerald-500/[0.06] text-emerald-400"
+                    : "border-amber-500/15 bg-amber-500/[0.06] text-amber-400"
+            }`}>
+              {data.status === "COMPLETED" ? <CheckCircle2 className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
+              {data.status === "COMPLETED" ? "Mülakat Tamamlandı" : "Değerlendirmede"}
             </span>
           </div>
         </div>
 
         {/* Action buttons */}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 mt-4 sm:mt-0">
           <button
             type="button"
+            onClick={() => setShowIdentity(!showIdentity)}
             className="inline-flex items-center gap-2 rounded-xl border border-amber-500/15 bg-amber-500/[0.06] px-4 py-2.5 text-xs font-semibold text-amber-400 transition-all duration-300 hover:border-amber-500/25 hover:bg-amber-500/[0.1]"
           >
             <Unlock className="h-3.5 w-3.5" />
-            Kimliği Aç
+            {showIdentity ? "Kimliği Gizle" : "Kimliği Aç"}
           </button>
+          {data.cvUrl ? (
+            <a
+              href={data.cvUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-xl border border-blue-500/15 bg-blue-500/[0.06] px-4 py-2.5 text-xs font-semibold text-blue-400 transition-all duration-300 hover:border-blue-500/25 hover:bg-blue-500/[0.1]"
+            >
+              <FileText className="h-3.5 w-3.5" />
+              CV Görüntüle
+            </a>
+          ) : (
+            <span className="inline-flex items-center gap-2 rounded-xl border border-red-500/15 bg-red-500/[0.06] px-4 py-2.5 text-xs font-semibold text-red-400">
+              <AlertTriangle className="h-3.5 w-3.5" />
+              CV dosyası bulunamadı veya yüklenmemiş.
+            </span>
+          )}
           <button
             type="button"
             className="inline-flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-2.5 text-xs font-semibold text-white/50 transition-all duration-300 hover:border-white/[0.14] hover:bg-white/[0.06] hover:text-white/70"
           >
             <FileDown className="h-3.5 w-3.5" />
-            PDF Raporu İndir
+            PDF Raporu
           </button>
         </div>
       </div>
@@ -191,22 +248,19 @@ export default function CandidatePage({ params }: CandidatePageProps): React.JSX
           </div>
           <div className="p-6">
             <p className="text-sm leading-relaxed text-white/40">
-              Aday, Node.js mimarisinde{" "}
-              <span className="font-medium text-white/60">yüksek yetkinlik</span>{" "}
-              gösterdi. Özellikle concurrency ve event-loop konularında derin bilgi
-              sahibi. Stres altındaki cevapları tutarlı ve analitik yaklaşımı güçlü.
+              Aday, {data.role} gereksinimlerine <span className="font-medium text-white/60">{data.techScore >= 75 ? "yüksek oranda" : "orta düzeyde"} uyum</span> gösterdi. Teknik analizlerde tutarlı cevaplar verirken iletişim becerileri yeterli bulundu.
             </p>
             <div className="mt-5 flex gap-3">
               <div className="flex-1 rounded-xl border border-blue-500/10 bg-blue-500/[0.04] p-3 text-center">
-                <p className="text-xl font-bold text-blue-400">8.5</p>
+                <p className="text-xl font-bold text-blue-400">{data.techScore}</p>
                 <p className="mt-0.5 text-[10px] text-white/25">Teknik Skor</p>
               </div>
               <div className="flex-1 rounded-xl border border-emerald-500/10 bg-emerald-500/[0.04] p-3 text-center">
-                <p className="text-xl font-bold text-emerald-400">%98</p>
+                <p className="text-xl font-bold text-emerald-400">%{data.reliability}</p>
                 <p className="mt-0.5 text-[10px] text-white/25">Güvenilirlik</p>
               </div>
               <div className="flex-1 rounded-xl border border-purple-500/10 bg-purple-500/[0.04] p-3 text-center">
-                <p className="text-xl font-bold text-purple-400">A+</p>
+                <p className="text-xl font-bold text-purple-400">{overallGrade}</p>
                 <p className="mt-0.5 text-[10px] text-white/25">Genel Derece</p>
               </div>
             </div>
@@ -226,7 +280,7 @@ export default function CandidatePage({ params }: CandidatePageProps): React.JSX
           <div className="p-4">
             <div className="h-[280px] w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <RadarChart cx="50%" cy="50%" outerRadius="70%" data={[...RADAR_DATA]}>
+                <RadarChart cx="50%" cy="50%" outerRadius="70%" data={data.radarData}>
                   <PolarGrid
                     stroke="rgba(255,255,255,0.04)"
                     strokeDasharray="3 3"
@@ -286,7 +340,7 @@ export default function CandidatePage({ params }: CandidatePageProps): React.JSX
             <h2 className="text-sm font-semibold text-white/70">
               Proctoring Log
             </h2>
-            <span className="ml-auto text-[10px] text-white/15">Güvenlik Raporu</span>
+            <span className="ml-auto text-[10px] text-white/15">Örnek Veri</span>
           </div>
           <div className="divide-y divide-white/[0.03]">
             {PROCTOR_LOG.map((event, i) => {
@@ -296,15 +350,10 @@ export default function CandidatePage({ params }: CandidatePageProps): React.JSX
                   key={i}
                   className="flex items-start gap-4 px-6 py-3.5 transition-colors hover:bg-white/[0.01]"
                 >
-                  {/* Timestamp */}
                   <span className="mt-0.5 shrink-0 font-mono text-xs text-white/20">
                     {event.time}
                   </span>
-
-                  {/* Dot */}
                   <span className={`mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full ${style.dot}`} />
-
-                  {/* Content */}
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
                       <span className={`rounded-md border px-2 py-0.5 text-[10px] font-medium ${style.bg} ${style.text}`}>
@@ -331,7 +380,9 @@ export default function CandidatePage({ params }: CandidatePageProps): React.JSX
             <h2 className="text-sm font-semibold text-white/70">
               Transkript
             </h2>
-            <span className="ml-auto text-[10px] text-white/15">Anonim</span>
+            <span className="ml-auto text-[10px] text-white/15">
+               {showIdentity ? "Açık" : "Anonim"}
+            </span>
           </div>
           <div className="max-h-[320px] overflow-y-auto">
             <div className="space-y-0 divide-y divide-white/[0.03]">
@@ -349,10 +400,10 @@ export default function CandidatePage({ params }: CandidatePageProps): React.JSX
                         : "text-emerald-400/50"
                     }`}
                   >
-                    {line.speaker === "ai" ? "AgenticHR" : `Aday #${id}`}
+                    {line.speaker === "ai" ? "AgenticHR" : (showIdentity ? data.fullName : `Aday #${data.id.substring(0, 5)}`)}
                   </span>
                   <p className="mt-1.5 text-xs leading-relaxed text-white/40">
-                    {line.text.split("[SANSÜRLENDİ]").map((part, j, arr) => (
+                    {showIdentity ? line.text.replace(/\[SANSÜRLENDİ\]/g, "---") : line.text.split("[SANSÜRLENDİ]").map((part, j, arr) => (
                       <span key={j}>
                         {part}
                         {j < arr.length - 1 && (

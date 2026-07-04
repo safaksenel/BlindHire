@@ -17,7 +17,7 @@ interface NavItem {
 const NAV_ITEMS: readonly NavItem[] = [
   { href: "/hr/dashboard", label: "Dashboard", icon: <LayoutDashboard className="h-4 w-4" /> },
   { href: "/hr/pipeline", label: "Aday Hunisi", icon: <Kanban className="h-4 w-4" /> },
-  { href: "#", label: "Ayarlar", icon: <Settings className="h-4 w-4" /> },
+  { href: "/hr/settings", label: "Ayarlar", icon: <Settings className="h-4 w-4" /> },
 ] as const;
 
 export default function HrLayout({ children }: HrLayoutProps): React.JSX.Element {
