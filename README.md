@@ -49,7 +49,8 @@ Takım BlindHire
 
 ### Sprint Board & Takım Toplantısı
 
-![Takım Toplantısı](WhatsApp%20Image%202026-07-01%20at%2023.06.12.jpeg)
+<img width="1916" height="773" alt="Ekran görüntüsü 2026-07-01 225915" src="https://github.com/user-attachments/assets/1f8c288a-131f-465d-b514-8a29c7d791fe" />
+
 
 ## Sprint 1
 
