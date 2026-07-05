@@ -63,19 +63,4 @@ python main.py
 
 ## 🧠 Gaze Tracking Calibration
 The system displays `Ratio X` and `Ratio Y` directly on the video feed. These numbers represent the position of your iris relative to your eye corners. If the system frequently misclassifies your center gaze as looking away, you can adjust the threshold values in `src/utils/gaze.py` based on your natural resting ratios.
-
-## 📚 Acknowledgements & Citations
-
-The emotion recognition models (ResNet50 + LSTM) and weights provided in this repository are based on the **EMO-AffectNet** project by Elena Ryumina. 
-
-If you use the emotion recognition models in your research, please cite their paper:
-```bibtex
-@article{RYUMINA2022,
-  title        = {{In Search of a Robust Facial Expressions Recognition Model: A Large-Scale Visual Cross-Corpus Study}},
-  author       = {{Elena Ryumina and Denis Dresvyanskiy and Alexey Karpov}},
-  journal      = {{Neurocomputing}},
-  year         = {2022},
-  doi          = {10.1016/j.neucom.2022.10.013},
-  url          = {https://www.sciencedirect.com/science/article/pii/S0925231222012656},
-}
 ```
