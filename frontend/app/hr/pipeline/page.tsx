@@ -16,7 +16,8 @@ import {
   FileText,
   Mail,
   User,
-  AlertCircle
+  AlertCircle,
+  Trash2
 } from "lucide-react";
 
 type ColumnKey = "pending" | "manual_review" | "invited" | "completed";
@@ -47,12 +48,18 @@ function CandidateCardUI({
   index,
   onInvite,
   inviteStatus,
+  onDelete,
+  onApprove,
+  onReject,
 }: {
   readonly card: CandidateCard;
   readonly columnKey: ColumnKey;
   readonly index: number;
   readonly onInvite?: (card: CandidateCard) => void;
   readonly inviteStatus?: "inviting" | "invited";
+  readonly onDelete?: (card: CandidateCard) => void;
+  readonly onApprove?: (card: CandidateCard) => void;
+  readonly onReject?: (card: CandidateCard) => void;
 }): React.JSX.Element {
   const content = (
     <motion.div
@@ -70,7 +77,18 @@ function CandidateCardUI({
             Aday #{card.id.substring(0, 5)}
           </span>
         </div>
-        <span className="text-[10px] text-white/20">{card.appliedAt}</span>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] text-white/20">{card.appliedAt}</span>
+          {onDelete && (
+            <button 
+               onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(card); }}
+               className="p-1 rounded-md text-white/20 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+               title="Başvuruyu Sil"
+            >
+               <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="mt-3 flex flex-col gap-1.5">
@@ -168,6 +186,28 @@ function CandidateCardUI({
           </AnimatePresence>
         </div>
       )}
+
+      {/* Action Buttons Row */}
+      <div className="mt-3 flex gap-2 w-full">
+        {onApprove && (
+          <button
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onApprove(card); }}
+            className="flex-1 flex items-center justify-center gap-1.5 rounded-lg border border-emerald-500/15 bg-emerald-500/[0.06] py-2 text-[11px] font-semibold text-emerald-400 hover:bg-emerald-500/[0.1] transition-all"
+          >
+            <CheckCircle2 className="h-3.5 w-3.5" />
+            Onayla
+          </button>
+        )}
+        {onReject && (
+          <button
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onReject(card); }}
+            className="flex-1 flex items-center justify-center gap-1.5 rounded-lg border border-red-500/15 bg-red-500/[0.06] py-2 text-[11px] font-semibold text-red-400 hover:bg-red-500/[0.1] transition-all"
+          >
+            <AlertCircle className="h-3.5 w-3.5" />
+            Reddet
+          </button>
+        )}
+      </div>
     </motion.div>
   );
 
@@ -283,6 +323,32 @@ export default function PipelinePage(): React.JSX.Element {
     }
   }, [fetchPipeline]);
 
+  const handleDelete = useCallback(async (card: CandidateCard) => {
+    if (!confirm(`Başvuruyu silmek istediğinize emin misiniz? (${card.fullName})`)) return;
+    try {
+      const res = await fetch(`/api/hr/pipeline?id=${card.id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Başvuru silinemedi.");
+      await fetchPipeline();
+    } catch (err: any) {
+      alert(err.message);
+    }
+  }, [fetchPipeline]);
+
+  const handleUpdateStatus = useCallback(async (card: CandidateCard, newStatus: string) => {
+    if (newStatus === "REJECTED" && !confirm(`Adayı reddetmek istediğinize emin misiniz? (${card.fullName})`)) return;
+    try {
+      const res = await fetch("/api/hr/pipeline", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ applicationId: card.id, newStatus })
+      });
+      if (!res.ok) throw new Error("Durum güncellenemedi.");
+      await fetchPipeline();
+    } catch (err: any) {
+      alert(err.message);
+    }
+  }, [fetchPipeline]);
+
   if (isLoading) {
     return (
       <div className="flex h-full min-h-[400px] flex-col items-center justify-center space-y-4">
@@ -327,6 +393,9 @@ export default function PipelinePage(): React.JSX.Element {
                   columnKey={column.key}
                   index={i}
                   onInvite={column.key === "manual_review" ? handleInvite : undefined}
+                  onDelete={handleDelete}
+                  onApprove={(column.key === "pending" || column.key === "invited") ? (c) => handleUpdateStatus(c, column.key === "pending" ? "MANUAL_REVIEW" : "COMPLETED") : undefined}
+                  onReject={column.key !== "completed" ? (c) => handleUpdateStatus(c, "REJECTED") : undefined}
                   inviteStatus={inviteStatuses[card.id]}
                 />
               ))}

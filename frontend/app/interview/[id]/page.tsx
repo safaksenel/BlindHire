@@ -923,10 +923,10 @@ function ArenaStage({
                       key={i}
                       className="w-[3px] rounded-full bg-emerald-400/40"
                       animate={{
-                        height: ["12px", `${22 + Math.random() * 28}px`, "12px"],
+                        height: ["12px", `${22 + (i % 5) * 7}px`, "12px"],
                       }}
                       transition={{
-                        duration: 0.6 + Math.random() * 0.4,
+                        duration: 0.6 + (i % 3) * 0.2,
                         repeat: Infinity,
                         ease: "easeInOut",
                         delay: i * 0.08,

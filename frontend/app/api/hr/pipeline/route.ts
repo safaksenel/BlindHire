@@ -4,14 +4,9 @@ import { prisma } from "@/lib/prisma";
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
     const userId = request.cookies.get("user_id")?.value;
-    if (!userId) {
-      return NextResponse.json({ message: "Oturum açılmamış." }, { status: 401 });
-    }
+    if (!userId) return NextResponse.json({ message: "Oturum açılmamış." }, { status: 401 });
 
-    const hrUser = await prisma.user.findUnique({
-      where: { id: userId }
-    });
-
+    const hrUser = await prisma.user.findUnique({ where: { id: userId } });
     if (!hrUser || hrUser.role !== "HR" || !hrUser.companyId) {
       return NextResponse.json({ pending: [], manual_review: [], invited: [], completed: [] });
     }
@@ -22,18 +17,13 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       where: { companyId },
       include: {
         applications: {
-          include: {
-            candidate: true
-          }
+          include: { candidate: true }
         }
       }
     });
 
     const allApps = companyJobs.flatMap(job => 
-        job.applications.map(app => ({
-            ...app,
-            jobTitle: job.title
-        }))
+        job.applications.map(app => ({ ...app, jobTitle: job.title }))
     );
 
     const formatCard = (app: any) => ({
@@ -89,6 +79,44 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
 
     return NextResponse.json({ message: `Aday statüsü ${newStatus} olarak güncellendi.` });
+  } catch (err) {
+    console.error(err);
+    return NextResponse.json({ message: "Sunucu hatası." }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: NextRequest): Promise<NextResponse> {
+  try {
+    const userId = request.cookies.get("user_id")?.value;
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get("id");
+    const deleteUser = searchParams.get("deleteUser") === "true";
+
+    if (!userId) return NextResponse.json({ message: "Oturum açılmamış." }, { status: 401 });
+    if (!id) return NextResponse.json({ message: "ID belirtilmedi." }, { status: 400 });
+
+    const hrUser = await prisma.user.findUnique({ where: { id: userId } });
+    if (!hrUser || hrUser.role !== "HR" || !hrUser.companyId) {
+      return NextResponse.json({ message: "Yetkisiz." }, { status: 403 });
+    }
+
+    const application = await prisma.application.findUnique({
+      where: { id },
+      include: { jobPosting: true }
+    });
+
+    if (!application) return NextResponse.json({ message: "Başvuru bulunamadı." }, { status: 404 });
+    if (application.jobPosting.companyId !== hrUser.companyId) {
+      return NextResponse.json({ message: "Yetkisiz." }, { status: 403 });
+    }
+
+    await prisma.application.delete({ where: { id } });
+
+    if (deleteUser && application.candidateId) {
+       await prisma.user.delete({ where: { id: application.candidateId } });
+    }
+
+    return NextResponse.json({ message: "Başvuru başarıyla silindi." });
   } catch (err) {
     console.error(err);
     return NextResponse.json({ message: "Sunucu hatası." }, { status: 500 });

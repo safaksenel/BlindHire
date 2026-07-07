@@ -23,11 +23,18 @@ import Link from "next/link";
 
 import { AuthNav } from "@/components/AuthNav";
 
-export default function RootLayout({
+import { cookies } from "next/headers";
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const cookieStore = await cookies();
+  const hasAuthToken = cookieStore.get("auth_token")?.value === "authenticated";
+  const hasHrToken = cookieStore.get("hr_auth_token")?.value === "authenticated";
+  const isAuth = hasAuthToken || hasHrToken;
+
   return (
     <html
       lang="tr"
@@ -42,7 +49,7 @@ export default function RootLayout({
               </div>
               <span className="font-bold tracking-tight text-white transition-colors group-hover:text-white/95">AgenticHR<span className="text-blue-400 font-medium">.ai</span></span>
             </Link>
-            <AuthNav />
+            <AuthNav isAuth={isAuth} />
           </div>
         </header>
         <div className="flex-1 flex flex-col">

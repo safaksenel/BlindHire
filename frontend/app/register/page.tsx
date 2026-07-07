@@ -15,7 +15,6 @@ import {
   ArrowRight,
   Loader2,
   AlertTriangle,
-  ShieldCheck,
 } from "lucide-react";
 
 const registerSchema = z
@@ -96,11 +95,9 @@ export default function RegisterPage(): React.JSX.Element {
         }
       }
 
-      const data = await response.json();
-
       router.push("/login?registered=true");
-    } catch (err: any) {
-      setGlobalError(err.message || "Bir hata oluştu. Lütfen tekrar deneyin.");
+    } catch (err) {
+      setGlobalError(err instanceof Error ? err.message : "Bir hata oluştu. Lütfen tekrar deneyin.");
       setIsLoading(false);
     }
   };

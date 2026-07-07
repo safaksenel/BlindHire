@@ -78,8 +78,8 @@ function LoginInner(): React.JSX.Element {
       } else {
         router.push("/dashboard");
       }
-    } catch (err: any) {
-      setError(err.message || "E-posta veya şifre hatalı.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "E-posta veya şifre hatalı.");
       setIsLoading(false);
     }
   };
