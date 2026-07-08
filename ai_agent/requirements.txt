@@ -1,5 +1,10 @@
-openai
+# LLM & Orkestrasyon
 langchain
-langchain-openai
 langchain-groq
 python-dotenv
+
+# RAG & Vektör Veritabanı
+langchain-community
+langchain-huggingface
+sentence-transformers
+faiss-cpu
