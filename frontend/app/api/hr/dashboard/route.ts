@@ -21,31 +21,84 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const companyJobs = await prisma.jobPosting.findMany({
       where: { companyId },
       include: {
-        applications: true
+        applications: {
+          include: {
+            candidate: true
+          }
+        }
       }
     });
 
-    const activeJobsCount = companyJobs.filter(j => j.status === "ACTIVE").length;
+    const now = new Date();
+
+    const jobsWithDynamicStatus = companyJobs.map(job => {
+      let computedStatus = job.status;
+      
+      if (job.status !== "ARCHIVED") {
+        if (job.startDate && job.endDate) {
+          const s = new Date(job.startDate);
+          const e = new Date(job.endDate);
+          if (now < s) computedStatus = "SCHEDULED";
+          else if (now > e) computedStatus = "EXPIRED";
+          else computedStatus = "ACTIVE";
+        } else if (job.startDate && !job.endDate) {
+          const s = new Date(job.startDate);
+          if (now < s) computedStatus = "SCHEDULED";
+          else computedStatus = "ACTIVE";
+        } else if (!job.startDate && job.endDate) {
+          const e = new Date(job.endDate);
+          if (now > e) computedStatus = "EXPIRED";
+          else computedStatus = "ACTIVE";
+        } else {
+           computedStatus = "ACTIVE";
+        }
+      }
+
+      return {
+        ...job,
+        computedStatus
+      };
+    });
+
+    const activeJobsCount = jobsWithDynamicStatus.filter(j => j.computedStatus === "ACTIVE").length;
     
     let totalCVs = 0;
     let passedCount = 0;
     
-    const jobsTable = companyJobs.map(job => {
+    const visibleJobs = jobsWithDynamicStatus.filter(j => j.computedStatus !== "ARCHIVED");
+    
+    const jobsTable = visibleJobs.map(job => {
       const apps = job.applications;
       totalCVs += apps.length;
       
-      const passed = apps.filter(a => a.status === "APPROVED" || a.status === "COMPLETED").length;
-      passedCount += passed;
+      const accepted = apps.filter(a => a.status === "APPROVED" || a.status === "COMPLETED").length;
+      const rejected = apps.filter(a => a.status === "REJECTED").length;
+      const interviewCount = apps.filter(a => a.status === "INVITED").length;
+      passedCount += accepted;
 
-      const rate = apps.length > 0 ? ((passed / apps.length) * 100).toFixed(1) : "0.0";
+      const applicants = apps.map(a => ({
+        id: a.id,
+        fullName: a.candidate?.fullName || "Bilinmeyen Aday",
+        email: a.candidate?.email || "Email Yok",
+        status: a.status,
+        techScore: a.techScore || 0,
+        reliability: a.reliability || 0
+      }));
       
       return {
         id: job.id,
         position: job.title,
-        department: "Genel",
-        credits: 100 - apps.length,
-        successRate: `%${rate}`,
-        trend: parseFloat(rate) > 0 ? "up" : "stable"
+        description: job.description,
+        startDate: job.startDate ? new Date(job.startDate).toLocaleString("tr-TR") : "Belirtilmemiş",
+        endDate: job.endDate ? new Date(job.endDate).toLocaleString("tr-TR") : "Belirsiz",
+        rawStartDate: job.startDate ? new Date(job.startDate).toISOString() : null,
+        rawEndDate: job.endDate ? new Date(job.endDate).toISOString() : null,
+        totalApplicants: apps.length,
+        acceptedCount: accepted,
+        rejectedCount: rejected,
+        interviewCount: interviewCount,
+        computedStatus: job.computedStatus,
+        applicants: applicants
       };
     });
 

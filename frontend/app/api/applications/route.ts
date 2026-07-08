@@ -33,6 +33,17 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ message: "Geçerli aday bulunamadı." }, { status: 400 });
     }
 
+    const existingApplication = await prisma.application.findFirst({
+      where: {
+        candidateId: candidate.id,
+        jobPostingId: jobId
+      }
+    });
+
+    if (existingApplication) {
+      return NextResponse.json({ message: "Bu ilana zaten başvurdunuz." }, { status: 400 });
+    }
+
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
@@ -53,6 +64,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     let status = "PENDING";
     
+    let finalInterviewId: string | undefined = undefined;
+    let finalInterviewPassword: string | undefined = undefined;
+    
     // Check Auto-Invite Threshold
     const hrSettings = await prisma.hRSettings.findFirst({
       where: { companyId: (candidate as any).companyId || undefined }
@@ -60,18 +74,39 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     
     if (hrSettings && techScore >= hrSettings.autoInviteThreshold) {
       status = "INTERVIEW_INVITED";
-      // TODO: Here we would trigger the Email API (Resend/SendGrid) for the interview link
-      console.log(`[AI-AGENT] Aday ${candidate.fullName} eYiYi aYt (${techScore} >= ${hrSettings.autoInviteThreshold}). Otomatik mAlakat maili gA nderiliyor...`);
+      
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+      finalInterviewId = Math.random().toString(36).substring(2, 10);
+      finalInterviewPassword = Math.random().toString(36).substring(2, 8).toUpperCase();
+      
+      try {
+        fetch(`${baseUrl}/api/send-email`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: candidate.email,
+            candidateName: candidate.fullName,
+            interviewLink: `${baseUrl}/interview/${finalInterviewId}`,
+            interviewPassword: finalInterviewPassword,
+          })
+        }).catch(e => console.error("Mail Error:", e));
+      } catch (e) {
+        console.error("Fetch API error:", e);
+      }
+      
+      console.log(`[AI-AGENT] Aday ${candidate.fullName} eşiği aştı (${techScore} >= ${hrSettings.autoInviteThreshold}). Otomatik mülakat maili gönderiliyor...`);
     }
 
     const newApp = await prisma.application.create({
       data: {
         candidateId: candidate.id,
         jobPostingId: jobId,
-        cvUrl,
-        status,
+        cvUrl: cvUrl,
         techScore,
-        reliability
+        reliability,
+        status,
+        interviewId: finalInterviewId,
+        interviewPassword: finalInterviewPassword
       }
     });
 

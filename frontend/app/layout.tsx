@@ -21,15 +21,17 @@ export const metadata: Metadata = {
 
 import Link from "next/link";
 
-import { AuthNav } from "@/components/AuthNav";
-
+import { GlobalHeader } from "@/components/GlobalHeader";
+import { AmbientBackgrounds } from "@/components/AmbientBackgrounds";
+import { PaletteProvider } from "@/components/PaletteContext";
+import { ToastProvider } from "@/components/ToastContext";
 import { cookies } from "next/headers";
 
 export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
-}>) {
+}>) { /* FORCE_RELOAD */
   const cookieStore = await cookies();
   const hasAuthToken = cookieStore.get("auth_token")?.value === "authenticated";
   const hasHrToken = cookieStore.get("hr_auth_token")?.value === "authenticated";
@@ -40,22 +42,35 @@ export default async function RootLayout({
       lang="tr"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased dark`}
     >
-      <body className="min-h-full flex flex-col bg-zinc-950 text-foreground">
-        <header className="sticky top-0 z-50 w-full border-b border-white/[0.06] bg-zinc-950/60 backdrop-blur-md">
-          <div className="mx-auto flex max-w-7xl h-16 items-center justify-between px-6">
-            <Link href="/" className="flex items-center gap-2 group">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500/20 to-purple-500/20 ring-1 ring-white/[0.08] transition-all group-hover:ring-blue-500/30">
-                <span className="text-sm font-black bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">A</span>
-              </div>
-              <span className="font-bold tracking-tight text-white transition-colors group-hover:text-white/95">AgenticHR<span className="text-blue-400 font-medium">.ai</span></span>
-            </Link>
-            <AuthNav isAuth={isAuth} />
-          </div>
-        </header>
-        <div className="flex-1 flex flex-col">
-          {children}
-        </div>
+      <body className="min-h-full flex flex-col bg-[var(--theme-c5)] text-foreground relative transition-colors duration-1000">
+        <svg style={{ display: 'none' }}>
+          <defs>
+            <filter id="protanopia">
+              <feColorMatrix type="matrix" values="0.567, 0.433, 0, 0, 0  0.558, 0.442, 0, 0, 0  0, 0.242, 0.758, 0, 0  0, 0, 0, 1, 0" />
+            </filter>
+            <filter id="deuteranopia">
+              <feColorMatrix type="matrix" values="0.625, 0.375, 0, 0, 0  0.7, 0.3, 0, 0, 0  0, 0.3, 0.7, 0, 0  0, 0, 0, 1, 0" />
+            </filter>
+            <filter id="tritanopia">
+              <feColorMatrix type="matrix" values="0.95, 0.05, 0, 0, 0  0, 0.433, 0.567, 0, 0  0, 0.475, 0.525, 0, 0  0, 0, 0, 1, 0" />
+            </filter>
+          </defs>
+        </svg>
+        <PaletteProvider>
+          <ToastProvider>
+            <AmbientBackgrounds />
+            <GlobalHeader isAuth={isAuth} />
+            <div className="flex-1 flex flex-col">
+              {children}
+            </div>
+          </ToastProvider>
+        </PaletteProvider>
       </body>
     </html>
   );
 }
+
+
+
+
+
