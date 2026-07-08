@@ -1,11 +1,12 @@
 {
   "metadata": {
-    "version": "1.0.0",
+    "version": "1.1.0",
     "description": "BlindHire RAG teknik soru veri seti. Otonom mülakat ajanının soru havuzu olarak kullanılır.",
     "author": "Melih Çam",
     "created_at": "2026-07-08",
-    "total_questions": 20,
-    "categories": ["python_fundamentals", "system_design", "scenario_debugging", "data_structures_algorithms"]
+    "updated_at": "2026-07-08",
+    "total_questions": 29,
+    "categories": ["python_fundamentals", "system_design", "scenario_debugging", "data_structures_algorithms", "ai_data_engineering"]
   },
   "questions": [
     {
@@ -287,6 +288,132 @@
         "Python neden tail call optimization yapmaz?"
       ],
       "evaluation_criteria": ["Recursion tanımı", "Avantaj/dezavantaj analizi", "Python recursion limit bilgisi"]
+    },
+    {
+      "id": "PY-006",
+      "category": "python_fundamentals",
+      "difficulty": "hard",
+      "interview_stage": "TECHNICAL_1",
+      "question": "Python'da Garbage Collection nasıl çalışır? Referans sayma (reference counting) mekanizması nedir ve döngüsel referansları (circular references) nasıl ele alır? Python'da memory leak (bellek sızıntısı) nasıl oluşur ve bunu tespit etmek için hangi araçları kullanırsın?",
+      "expected_answer": "Python birincil olarak referans sayma (reference counting) mekanizması kullanır: bir nesneye olan referans sayısı sıfıra düştüğünde nesne bellekten silinir. Ancak iki nesne birbirine referans verdiğinde (circular reference) sayaç sıfıra düşmez. Bu durumu çözmek için Python'un gc modülünde çalışan generational garbage collector devreye girer. Nesneleri 3 kuşağa (generation 0, 1, 2) ayırır ve periyodik olarak döngüsel referansları tespit edip temizler. Memory leak genellikle global listelere sürekli veri eklenmesi, __del__ yıkıcısındaki hatalar, C extension'lardaki düzgün serbest bırakılmayan kaynaklar veya kapatılmayan dosya/soket bağlantılarından oluşur. Tespit için tracemalloc, objgraph, memory_profiler ve gc.get_objects() kullanılabilir.",
+      "hints": [
+        "sys.getrefcount() ile bir nesnenin referans sayısını kontrol et.",
+        "gc modülündeki 3 kuşak (generation) ne anlama geliyor?",
+        "__del__ metodu neden tehlikeli olabilir?"
+      ],
+      "evaluation_criteria": ["Reference counting mekanizması", "Circular reference ve generational GC bilgisi", "Memory leak nedenleri ve tespit araçları"]
+    },
+    {
+      "id": "PY-007",
+      "category": "python_fundamentals",
+      "difficulty": "hard",
+      "interview_stage": "TECHNICAL_1",
+      "question": "Python'da multi-threading ve multi-processing arasındaki temel farklar nelerdir? Her birinin avantajları ve dezavantajları nelerdir? CPU-bound bir görevi hızlandırmak için hangisini seçersin ve neden? concurrent.futures modülü bu iki yaklaşımı nasıl birleştirir?",
+      "expected_answer": "Multi-threading aynı süreç içinde birden fazla iş parçacığı oluşturur, paylaşılan bellek kullanır ve context switch maliyeti düşüktür ancak GIL nedeniyle CPU-bound işlerde gerçek paralellik sağlanamaz. Multi-processing ayrı süreçler oluşturur, her sürecin kendi bellek alanı ve GIL'i vardır dolayısıyla CPU-bound işlerde gerçek paralellik sağlanır ancak süreçler arası iletişim (IPC) daha maliyetlidir ve bellek tüketimi yüksektir. CPU-bound görevler için multiprocessing, I/O-bound görevler için threading tercih edilir. concurrent.futures modülü ThreadPoolExecutor ve ProcessPoolExecutor ile her iki yaklaşımı aynı arayüz altında birleştirir, submit() ve map() metodları ile kolay paralellik sağlar.",
+      "hints": [
+        "Paylaşılan bellek (shared memory) avantaj mı yoksa risk mi?",
+        "Bir web scraper için hangisini seçerdin?",
+        "concurrent.futures.as_completed() ne işe yarar?"
+      ],
+      "evaluation_criteria": ["Threading vs Processing farkları", "GIL etkisi ve CPU/IO-bound ayrımı", "concurrent.futures bilgisi"]
+    },
+    {
+      "id": "SD-006",
+      "category": "system_design",
+      "difficulty": "hard",
+      "interview_stage": "TECHNICAL_2",
+      "question": "Veritabanı ölçeklemede Read Replica nedir ve hangi sorunları çözer? Sharding (yatay parçalama) nedir, hangi durumlarda zorunlu hale gelir? Shard key seçiminin performansa etkisini açıkla. Vertical scaling ile horizontal scaling arasındaki fark nedir?",
+      "expected_answer": "Read Replica, ana veritabanının salt okunur kopyalarıdır. Okuma yükünü birden fazla sunucuya dağıtarak ana sunucunun yazma işlemlerine odaklanmasını sağlar. Sharding, veriyi belirli bir anahtara göre birden fazla veritabanı sunucusuna böler. Tek bir sunucunun kapasitesini aştığında, çok büyük veri setlerinde veya coğrafi dağıtım gerektiğinde zorunlu hale gelir. Shard key seçimi kritiktir: kötü bir key (düşük kardinalite veya hot spot yaratan) verilerin dengesiz dağılmasına ve bazı shard'ların aşırı yüklenmesine neden olur. Vertical scaling tek sunucuya daha güçlü donanım eklemektir ve bir üst sınırı vardır. Horizontal scaling birden fazla sunucu ekleyerek ölçeklenir ve teorik olarak sınırsızdır.",
+      "hints": [
+        "Read Replica'da replication lag (gecikme) sorunu nasıl yönetilir?",
+        "User ID iyi bir shard key midir? Tarih bazlı shard key'in riski nedir?",
+        "Vertical scaling neden bir noktadan sonra yetersiz kalır?"
+      ],
+      "evaluation_criteria": ["Read Replica mekanizması", "Sharding kavramı ve shard key seçimi", "Vertical vs horizontal scaling"]
+    },
+    {
+      "id": "SD-007",
+      "category": "system_design",
+      "difficulty": "hard",
+      "interview_stage": "TECHNICAL_2",
+      "question": "Redis ve Memcached arasındaki temel farklar nelerdir? Hangi senaryolarda hangisini tercih edersin? Cache Invalidation (önbellek geçersiz kılma) neden zor bir problemdir? Cache-aside, Write-through ve Write-behind stratejilerini karşılaştır.",
+      "expected_answer": "Redis kalıcılık (persistence) desteği, zengin veri yapıları (list, set, sorted set, hash), pub/sub ve Lua scripting sunar. Memcached daha basit, sadece key-value, çoklu iş parçacığı desteği ile çok yüksek throughput sağlar. Basit oturum veya string önbellekleme için Memcached, karmaşık veri yapıları ve kalıcılık gereken durumlarda Redis tercih edilir. Cache invalidation zordur çünkü veri kaynağı ile önbellek arasındaki tutarlılığı garanti etmek gerekir. Cache-aside'da uygulama önce cache'e bakar, yoksa veritabanından çekip cache'e yazar. Write-through'da her yazma işlemi hem cache'e hem veritabanına eşzamanlı yazılır, tutarlılık yüksek ama yazma yavaştır. Write-behind'da önce cache'e yazılır, veritabanına asenkron olarak aktarılır, yazma hızlı ama veri kaybı riski vardır.",
+      "hints": [
+        "Redis'in RDB ve AOF persistence farkı nedir?",
+        "TTL (Time To Live) en basit invalidation stratejisi midir?",
+        "Cache stampede (thundering herd) problemi nedir?"
+      ],
+      "evaluation_criteria": ["Redis vs Memcached farkları", "Cache invalidation zorluğu", "Cache stratejileri karşılaştırması"]
+    },
+    {
+      "id": "SD-008",
+      "category": "system_design",
+      "difficulty": "hard",
+      "interview_stage": "TECHNICAL_2",
+      "question": "Mikroservis mimarisinde REST API, gRPC ve Message Broker (RabbitMQ/Kafka) iletişim modellerini karşılaştır. Her birinin güçlü ve zayıf yönleri nelerdir? Bir e-ticaret sisteminde sipariş oluşturma, ödeme işleme ve bildirim gönderme servislerini tasarlarken hangi iletişim modelini nerede kullanırsın?",
+      "expected_answer": "REST API HTTP tabanlı, anlaşılması kolay, geniş ekosistem ve araç desteği sunar ancak text-based (JSON) olduğu için veri boyutu büyük ve gecikme yüksek olabilir. gRPC Protocol Buffers ile binary serialization yapar, düşük gecikme ve yüksek performans sağlar, bidirectional streaming destekler ancak tarayıcı desteği sınırlıdır ve öğrenme eğrisi yüksektir. Message Broker asenkron, loosely coupled iletişim sağlar, servisler birbirinden bağımsız çalışır ve dayanıklılık yüksektir ancak mimari karmaşıklık artar. E-ticaret senaryosunda: sipariş oluşturma için REST veya gRPC (senkron, anında yanıt gerekir), ödeme işleme için senkron gRPC (düşük gecikme, güvenilirlik) ve bildirim gönderme için Kafka veya RabbitMQ (asenkron, kullanıcıyı bekletmez) kullanılır.",
+      "hints": [
+        "Protocol Buffers ve JSON arasındaki boyut ve hız farkı.",
+        "Ödeme işleminde asenkron iletişim riski nedir?",
+        "Kafka'nın log-based yapısı event sourcing ile nasıl uyuşur?"
+      ],
+      "evaluation_criteria": ["REST vs gRPC vs Message Broker karşılaştırması", "Senaryo bazlı doğru iletişim modeli seçimi", "Avantaj/dezavantaj analizi"]
+    },
+    {
+      "id": "SD-009",
+      "category": "system_design",
+      "difficulty": "medium",
+      "interview_stage": "TECHNICAL_2",
+      "question": "JWT (JSON Web Token) nasıl çalışır? Bir JWT token'ının 3 parçası nedir ve her biri ne içerir? Access token ile refresh token mimarisi neden gereklidir? JWT'nin güvenlik açısından bilinen riskleri nelerdir?",
+      "expected_answer": "JWT, Header (algoritma ve token tipi), Payload (kullanıcı bilgileri ve claim'ler) ve Signature (doğrulama imzası) olmak üzere 3 parçadan oluşur ve Base64URL ile kodlanıp nokta ile ayrılır. Access token kısa ömürlüdür (genelde 15-30 dakika) ve her istekte gönderilir. Refresh token uzun ömürlüdür (günler veya haftalar) ve access token süresi dolduğunda yenisini almak için kullanılır. Bu mimari gereklidir çünkü access token çalınırsa kısa ömrü sayesinde hasar sınırlanır, kullanıcı sürekli giriş yapmak zorunda kalmaz. JWT riskleri: token'lar sunucu tarafında iptal edilemez (stateless yapıda), secret key sızması tüm token'ları geçersiz kılar, payload şifrelenmez sadece kodlanır dolayısıyla hassas veri konmamalıdır, ve algorithm confusion saldırıları (alg: none veya RS256 yerine HS256 kullanımı) mümkündür.",
+      "hints": [
+        "JWT neden stateless'tır ve bu neden hem avantaj hem dezavantaj?",
+        "Access token 1 saat ömürlü olsa ve çalınsa ne olur?",
+        "Token blacklist veya token rotation stratejileri."
+      ],
+      "evaluation_criteria": ["JWT yapısı (3 parça)", "Access/Refresh token mimarisi", "Güvenlik riskleri bilgisi"]
+    },
+    {
+      "id": "AI-001",
+      "category": "ai_data_engineering",
+      "difficulty": "hard",
+      "interview_stage": "TECHNICAL_1",
+      "question": "RAG (Retrieval-Augmented Generation) mimarisinde LLM'lerin halüsinasyon sorunu nasıl minimize edilir? Chunk boyutu ve overlap stratejisi retrieval kalitesini nasıl etkiler? LangChain ve LlamaIndex arasındaki temel mimari farklar nelerdir ve hangi senaryoda hangisini tercih edersin?",
+      "expected_answer": "Halüsinasyon, LLM'in eğitim verisinde olmayan bilgileri uydurmasıdır. RAG'da minimize etmek için: retrieval kalitesini artırmak (daha iyi embedding modelleri ve reranking), prompt'a 'sadece verilen bağlamdan cevap ver, bilmiyorsan bilmediğini söyle' talimatı eklemek, chunk boyutunu optimize etmek (çok küçük chunk bağlam kaybettirir, çok büyük chunk gürültü ekler, genelde 500-1000 token arası), chunk overlap ile bilgi kopmasını önlemek ve citation/kaynak referansı zorunlu kılmak gerekir. LangChain genel amaçlı bir orkestrasyon framework'üdür, chain ve agent kavramları ile esnek pipeline'lar kurar, çok geniş entegrasyon desteği sunar. LlamaIndex veri indeksleme ve retrieval'a odaklanır, doküman yükleme, indeksleme ve sorgulamada daha optimize yapılar sunar. Karmaşık agent akışları için LangChain, doküman ağırlıklı soru-cevap sistemleri için LlamaIndex tercih edilir.",
+      "hints": [
+        "Temperature değerini düşürmek halüsinasyonu azaltır mı?",
+        "Semantic search ve keyword search'ü birleştiren hybrid search ne avantaj sağlar?",
+        "LangChain'in LCEL (LangChain Expression Language) yapısı ne kolaylık sağlar?"
+      ],
+      "evaluation_criteria": ["Halüsinasyon azaltma teknikleri", "Chunk stratejisi bilgisi", "LangChain vs LlamaIndex karşılaştırması"]
+    },
+    {
+      "id": "AI-002",
+      "category": "ai_data_engineering",
+      "difficulty": "hard",
+      "interview_stage": "TECHNICAL_1",
+      "question": "Phi-3 veya TinyLlama gibi küçük dil modellerini belirli bir göreve fine-tune ederken LoRA ve QLoRA teknikleri nasıl çalışır? Full fine-tuning yerine LoRA kullanmanın avantajları nelerdir? Rank (r) parametresinin model performansına etkisini açıkla.",
+      "expected_answer": "LoRA (Low-Rank Adaptation), büyük modelin orijinal ağırlık matrislerini dondurup yanlarına küçük, düşük rank'li iki matris (A ve B) ekler. Eğitim sırasında sadece bu küçük matrisler güncellenir, bu da eğitilebilir parametre sayısını yüzde 1'in altına düşürür. QLoRA ise modelin orijinal ağırlıklarını 4-bit'e kuantize ederek bellek kullanımını dramatik şekilde azaltır ve LoRA adaptörlerini bu kuantize model üzerine uygular. Full fine-tuning yerine LoRA kullanmanın avantajları: çok daha az GPU belleği gerektirir, eğitim süresi kısalır, birden fazla görev için farklı adaptörler saklanabilir ve orijinal model bozulmaz. Rank (r) parametresi adaptör matrislerinin boyutunu belirler. Düşük rank (4-8) daha az parametre ve hızlı eğitim sağlar ama karmaşık görevlerde yetersiz kalabilir. Yüksek rank (32-64) daha fazla ifade gücü sunar ama bellek ve süre artar. Görev karmaşıklığına göre dengelenmelidir.",
+      "hints": [
+        "LoRA'daki düşük rank varsayımı (low-rank hypothesis) nedir?",
+        "4-bit kuantizasyon doğrulukta ne kadar kayba yol açar?",
+        "Birden fazla LoRA adaptörünü aynı base model üzerinde nasıl kullanırsın?"
+      ],
+      "evaluation_criteria": ["LoRA mekanizması", "QLoRA ve kuantizasyon bilgisi", "Rank parametresi etkisi", "Full fine-tuning ile karşılaştırma"]
+    },
+    {
+      "id": "AI-003",
+      "category": "ai_data_engineering",
+      "difficulty": "hard",
+      "interview_stage": "TECHNICAL_1",
+      "question": "YOLO mimarisini kullanarak gerçek zamanlı nesne tespiti yaparken FPS (kare hızı) ve doğruluk (mAP) arasındaki dengeyi nasıl kurarsın? YOLOv8 ile YOLOv5 arasındaki temel mimari farklar nelerdir? Edge cihazlarda (Raspberry Pi, Jetson Nano) çalıştırırken hangi optimizasyon tekniklerini uygularsın?",
+      "expected_answer": "FPS ve doğruluk dengesi model boyutu, giriş çözünürlüğü ve donanıma bağlıdır. Küçük model varyantları (YOLOv8n, YOLOv8s) yüksek FPS ama düşük mAP, büyük varyantlar (YOLOv8l, YOLOv8x) yüksek mAP ama düşük FPS sağlar. Giriş çözünürlüğünü düşürmek (640x640 yerine 320x320) FPS'i artırır ama küçük nesneleri kaçırma riski oluşturur. YOLOv8, YOLOv5'e göre anchor-free detection kullanır, C2f modülü ile daha verimli feature extraction yapar, decoupled head ile sınıflandırma ve lokalizasyonu ayırır ve native olarak segmentasyon ve pose estimation destekler. Edge cihazlarda optimizasyon için: model pruning ile gereksiz nöronları budama, INT8 veya FP16 kuantizasyon, TensorRT veya ONNX Runtime ile inference optimizasyonu, model distillation ile küçük öğrenci model eğitme ve giriş çözünürlüğünü düşürme teknikleri uygulanır.",
+      "hints": [
+        "Anchor-based ve anchor-free detection farkı nedir?",
+        "TensorRT hangi donanımda en etkili?",
+        "mAP@0.5 ve mAP@0.5:0.95 metrikleri arasındaki fark."
+      ],
+      "evaluation_criteria": ["FPS vs doğruluk dengesi", "YOLO versiyon farkları", "Edge optimizasyon teknikleri"]
     }
   ]
 }
