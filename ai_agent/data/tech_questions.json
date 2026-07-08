@@ -1,0 +1,419 @@
+{
+  "metadata": {
+    "version": "1.1.0",
+    "description": "BlindHire RAG teknik soru veri seti. Otonom mülakat ajanının soru havuzu olarak kullanılır.",
+    "author": "Melih Çam",
+    "created_at": "2026-07-08",
+    "updated_at": "2026-07-08",
+    "total_questions": 29,
+    "categories": ["python_fundamentals", "system_design", "scenario_debugging", "data_structures_algorithms", "ai_data_engineering"]
+  },
+  "questions": [
+    {
+      "id": "PY-001",
+      "category": "python_fundamentals",
+      "difficulty": "hard",
+      "interview_stage": "TECHNICAL_1",
+      "question": "Python'da GIL nedir, neden vardır ve çoklu iş parçacığı (multithreading) performansını nasıl etkiler? GIL'in bir sorun olduğu senaryoda hangi alternatif yaklaşımları kullanırsın?",
+      "expected_answer": "GIL (Global Interpreter Lock), CPython yorumlayıcısında aynı anda yalnızca bir thread'in Python bytecode çalıştırmasını sağlayan bir mutex kiliddir. Referans sayma tabanlı bellek yönetimini thread-safe yapmak için vardır. CPU-bound işlemlerde GIL performansı düşürür çünkü gerçek paralellik sağlanamaz. Alternatif olarak multiprocessing modülü ile ayrı süreçler, concurrent.futures.ProcessPoolExecutor, C extension'lar veya asyncio (I/O-bound işler için) kullanılabilir.",
+      "hints": [
+        "CPython'a özgü bir mekanizma olduğunu hatırla.",
+        "CPU-bound ve I/O-bound iş yüklerini ayırt et.",
+        "multiprocessing modülü GIL'i nasıl aşar?"
+      ],
+      "evaluation_criteria": ["GIL tanımının doğruluğu", "CPU-bound vs I/O-bound ayrımı", "Alternatif çözüm önerileri"]
+    },
+    {
+      "id": "PY-002",
+      "category": "python_fundamentals",
+      "difficulty": "hard",
+      "interview_stage": "TECHNICAL_1",
+      "question": "Python'da decorator nedir? Bir fonksiyonun çalışma süresini ölçen bir decorator'ı argümansız ve argümanlı olarak nasıl yazarsın? functools.wraps ne işe yarar?",
+      "expected_answer": "Decorator, bir fonksiyonu sarmalayarak davranışını değiştiren veya genişleten bir higher-order fonksiyondur. Basit bir timer decorator'ı, iç fonksiyon tanımlayarak orijinal fonksiyonu çağırır ve süreyi ölçer. Argümanlı decorator'da üç katmanlı iç içe fonksiyon yapısı kullanılır. functools.wraps, sarmalanan fonksiyonun __name__, __doc__ gibi metadata bilgilerini korumasını sağlar, bu olmadan introspection ve debugging zorlaşır.",
+      "hints": [
+        "Higher-order function kavramını düşün.",
+        "Üç katmanlı yapı: dış fonksiyon argümanları alır, orta katman fonksiyonu alır, iç katman çalıştırır.",
+        "functools.wraps olmadan __name__ ne döner?"
+      ],
+      "evaluation_criteria": ["Decorator tanımı", "Argümanlı decorator yapısı", "functools.wraps bilgisi"]
+    },
+    {
+      "id": "PY-003",
+      "category": "python_fundamentals",
+      "difficulty": "medium",
+      "interview_stage": "TECHNICAL_1",
+      "question": "Python'da generator nedir ve normal bir fonksiyondan farkı nedir? Büyük bir veri setini işlerken generator kullanmanın avantajı nedir? yield ve return arasındaki temel fark nedir?",
+      "expected_answer": "Generator, yield anahtar kelimesi kullanan ve çağrıldığında bir iterator nesnesi döndüren özel bir fonksiyondur. Normal fonksiyondan farkı, çalışmasını duraklatıp kaldığı yerden devam edebilmesidir. Büyük veri setlerinde tüm veriyi belleğe yüklemek yerine lazy evaluation ile tek tek eleman üretir, bu da bellek kullanımını dramatik şekilde azaltır. return fonksiyonu sonlandırırken, yield değer üretip fonksiyonun durumunu korur.",
+      "hints": [
+        "Lazy evaluation kavramını düşün.",
+        "Milyonlarca satırlık bir CSV dosyasını düşün.",
+        "Generator expression ile list comprehension farkı nedir?"
+      ],
+      "evaluation_criteria": ["Generator tanımı", "Lazy evaluation avantajı", "yield vs return farkı"]
+    },
+    {
+      "id": "PY-004",
+      "category": "python_fundamentals",
+      "difficulty": "hard",
+      "interview_stage": "TECHNICAL_1",
+      "question": "Python'da async/await nasıl çalışır? asyncio event loop ne yapar? Senkron bir I/O-bound uygulamayı asenkrona çevirmenin adımları nelerdir? async ile threading arasındaki fark nedir?",
+      "expected_answer": "async/await, Python'da kooperatif çoklu görev (cooperative multitasking) sağlayan coroutine tabanlı asenkron programlama yapısıdır. Event loop, çalıştırılmayı bekleyen coroutine'leri yönetir ve I/O beklerken diğer görevlere geçiş yapar. Senkrondan asenkrona geçişte: fonksiyonlara async eklenir, blocking çağrılar await ile değiştirilir, asyncio.run() ile event loop başlatılır. Threading OS seviyesinde context switch yaparken, asyncio tek thread'de coroutine'ler arası geçiş yapar ve daha hafiftir.",
+      "hints": [
+        "Coroutine kavramını açıkla.",
+        "Event loop tek bir thread'de çalışır.",
+        "I/O-bound vs CPU-bound iş yüklerinde hangisi daha uygun?"
+      ],
+      "evaluation_criteria": ["async/await mekanizması", "Event loop açıklaması", "Threading ile farkı"]
+    },
+    {
+      "id": "PY-005",
+      "category": "python_fundamentals",
+      "difficulty": "medium",
+      "interview_stage": "TECHNICAL_1",
+      "question": "Python'da mutable ve immutable veri tipleri arasındaki fark nedir? Bir fonksiyona parametre olarak liste geçtiğinde ne olur? Bu durum hata yaratabilir mi? Shallow copy ve deep copy farkını açıkla.",
+      "expected_answer": "Immutable tipler (int, str, tuple) oluşturulduktan sonra değiştirilemez, mutable tipler (list, dict, set) değiştirilebilir. Fonksiyona liste geçildiğinde referans kopyalanır, yani fonksiyon içindeki değişiklik orijinal listeyi etkiler. Bu, varsayılan parametre olarak mutable nesne kullanıldığında yaygın bir bug kaynağıdır. Shallow copy yalnızca en üst seviye nesneleri kopyalar, iç içe nesneler hala aynı referansı paylaşır. Deep copy tüm iç nesneleri de yeni kopyalar olarak oluşturur.",
+      "hints": [
+        "Default parametre olarak boş liste kullanımı.",
+        "id() fonksiyonu ile referansları kontrol et.",
+        "copy modülündeki copy() ve deepcopy() farkı."
+      ],
+      "evaluation_criteria": ["Mutable/immutable tanımı", "Referans geçirme bilgisi", "Shallow vs deep copy"]
+    },
+    {
+      "id": "SD-001",
+      "category": "system_design",
+      "difficulty": "hard",
+      "interview_stage": "TECHNICAL_2",
+      "question": "Saniyede 10.000 istek alan bir REST API tasarlaman gerekiyor. Yüksek erişilebilirlik ve düşük gecikme süresi sağlamak için mimariyi nasıl tasarlarsın? Hangi önbellekleme stratejilerini kullanırsın?",
+      "expected_answer": "Yatay ölçekleme için load balancer arkasında birden fazla uygulama sunucusu kullanılır. Veritabanı katmanında read replica'lar ile okuma yükü dağıtılır. Redis veya Memcached ile hot data önbelleklenir. Cache-aside veya write-through stratejileri uygulanır. CDN ile statik içerik dağıtılır. Rate limiting ve circuit breaker pattern'ler ile sistem korunur. Veritabanı sorguları optimize edilir, gerekirse sharding yapılır. Monitoring ve auto-scaling ile dinamik kapasite yönetimi sağlanır.",
+      "hints": [
+        "Önce darboğazın nerede olacağını düşün: CPU, I/O, veritabanı?",
+        "Cache invalidation stratejileri önemli.",
+        "Horizontal vs vertical scaling."
+      ],
+      "evaluation_criteria": ["Ölçekleme yaklaşımı", "Cache stratejisi", "Veritabanı optimizasyonu", "Mimari bileşenler"]
+    },
+    {
+      "id": "SD-002",
+      "category": "system_design",
+      "difficulty": "medium",
+      "interview_stage": "TECHNICAL_2",
+      "question": "REST API ve GraphQL arasındaki temel farklar nelerdir? Hangi senaryolarda hangisini tercih edersin? Over-fetching ve under-fetching sorunları nedir?",
+      "expected_answer": "REST, kaynak tabanlı URL endpoint'leri ve HTTP metodları kullanır; her endpoint sabit bir veri yapısı döner. GraphQL, tek bir endpoint üzerinden istemcinin tam olarak ihtiyaç duyduğu veriyi sorgulamasına izin verir. Over-fetching, REST'te ihtiyaç duyulandan fazla veri dönmesidir. Under-fetching, tek bir isteğin yeterli veri sağlamaması ve birden fazla istek gerektirmesidir. REST, basit CRUD ve önbellekleme gereken durumlarda; GraphQL, karmaşık ilişkisel veri ve mobil uygulamalarda tercih edilir.",
+      "hints": [
+        "Mobil uygulamada bant genişliği kısıtlı, hangisi avantajlı?",
+        "HTTP önbellekleme REST'te nasıl çalışır?",
+        "N+1 sorgu problemi GraphQL'de nasıl ele alınır?"
+      ],
+      "evaluation_criteria": ["REST vs GraphQL farkları", "Over/under-fetching açıklaması", "Senaryo bazlı tercih"]
+    },
+    {
+      "id": "SD-003",
+      "category": "system_design",
+      "difficulty": "hard",
+      "interview_stage": "TECHNICAL_2",
+      "question": "Mikroservis mimarisinde servisler arası iletişim için senkron ve asenkron iletişim modellerini karşılaştır. Mesaj kuyrukları (RabbitMQ, Kafka) ne zaman kullanılır? Eventual consistency kavramını açıkla.",
+      "expected_answer": "Senkron iletişimde (REST, gRPC) çağıran servis yanıt bekler, basit ama bağımlılık zincirleri oluşturabilir. Asenkron iletişimde (mesaj kuyrukları) servisler birbirinden bağımsız çalışır, dayanıklılık artar. RabbitMQ, görev dağıtımı ve karmaşık routing için; Kafka, yüksek hacimli event streaming ve log aggregation için kullanılır. Eventual consistency, dağıtık sistemlerde tüm node'ların aynı veriye ulaşmasının zaman alabileceğini kabul eden bir modeldir; anlık tutarlılık yerine nihai tutarlılık garanti edilir.",
+      "hints": [
+        "Bir servis çöktüğünde diğerlerini nasıl etkiler?",
+        "Kafka'nın log-based yapısını düşün.",
+        "CAP teoremi ile eventual consistency ilişkisi."
+      ],
+      "evaluation_criteria": ["Senkron vs asenkron farkı", "Mesaj kuyruğu seçimi", "Eventual consistency bilgisi"]
+    },
+    {
+      "id": "SD-004",
+      "category": "system_design",
+      "difficulty": "medium",
+      "interview_stage": "TECHNICAL_2",
+      "question": "SQL ve NoSQL veritabanları arasındaki temel farklar nelerdir? Bir e-ticaret platformu için veritabanı seçimi yaparken hangi kriterlere bakarsın? ACID ve BASE prensiplerini karşılaştır.",
+      "expected_answer": "SQL veritabanları ilişkisel, şema zorunlu, ACID uyumlu ve dikey ölçeklenebilir. NoSQL veritabanları esnek şema, yatay ölçeklenebilir ve BASE prensiplerine dayalı. E-ticarette ürün kataloğu için MongoDB gibi esnek şema, sipariş ve ödeme işlemleri için PostgreSQL gibi ACID uyumlu veritabanı, oturum yönetimi için Redis kullanılabilir. ACID atomiklik, tutarlılık, izolasyon ve dayanıklılık garanti eder. BASE temel erişilebilirlik, yumuşak durum ve nihai tutarlılık sağlar.",
+      "hints": [
+        "Polyglot persistence yaklaşımını düşün.",
+        "Ödeme işlemlerinde neden ACID önemli?",
+        "Ürün kataloğunda şema esnekliği neden avantajlı?"
+      ],
+      "evaluation_criteria": ["SQL vs NoSQL farkları", "Senaryo bazlı veritabanı seçimi", "ACID vs BASE"]
+    },
+    {
+      "id": "SD-005",
+      "category": "system_design",
+      "difficulty": "hard",
+      "interview_stage": "TECHNICAL_2",
+      "question": "Bir URL kısaltma servisi (URL shortener) tasarla. Günde 100 milyon yeni URL oluşturulacak. Kısa URL'nin benzersizliğini nasıl garanti edersin? Yönlendirme gecikmesini nasıl minimize edersin?",
+      "expected_answer": "Base62 encoding ile 6-7 karakterlik kısa kodlar üretilir. Benzersizlik için önceden üretilmiş ID havuzu (pre-generated key service), veya auto-increment ID üzerine base62 dönüşümü kullanılabilir. Hash collision'ları önlemek için bloom filter eklenebilir. Yönlendirme gecikmesi için URL mapping Redis'te cache'lenir, sıcak URL'ler CDN'de tutulur. Veritabanı olarak yazma yoğun iş yükü için Cassandra veya DynamoDB, okuma için Redis tier'ı kullanılır. 301 (kalıcı) vs 302 (geçici) yönlendirme farkı analitik ihtiyaca göre seçilir.",
+      "hints": [
+        "62 karakter (a-z, A-Z, 0-9) ile 6 haneli kod kaç kombinasyon yapar?",
+        "301 vs 302 redirect farkı analitik açısından neden önemli?",
+        "Write-heavy bir sistem için hangi veritabanı uygun?"
+      ],
+      "evaluation_criteria": ["Kısa kod üretme stratejisi", "Benzersizlik garantisi", "Önbellekleme tasarımı", "Ölçekleme"]
+    },
+    {
+      "id": "SC-001",
+      "category": "scenario_debugging",
+      "difficulty": "hard",
+      "interview_stage": "SCENARIO",
+      "question": "Üretim ortamındaki bir Python mikroservisi aniden yüksek bellek kullanımı yaşıyor ve yanıt süreleri 5 saniyeyi geçiyor. Bu sorunu teşhis etmek ve çözmek için adım adım nasıl bir yol izlersin?",
+      "expected_answer": "Önce monitoring araçlarıyla (Grafana, Datadog) bellek ve CPU grafiklerini incelenir, sorunun ne zaman başladığı tespit edilir. Son deploy edilen değişiklikler kontrol edilir. memory_profiler veya tracemalloc ile bellek sızıntısı kaynağı bulunur. cProfile ile yavaş fonksiyonlar tespit edilir. Veritabanı sorguları slow query log'larından analiz edilir. Olası nedenler: kapatılmayan bağlantı havuzları, büyüyen in-memory cache, N+1 sorgu problemi, büyük dosya/veri yapılarının bellekte tutulması. Çözümler: connection pooling düzeltme, cache eviction policy ekleme, sorgu optimizasyonu, generator kullanımı.",
+      "hints": [
+        "Son deployment'ta ne değişti?",
+        "tracemalloc ile hangi nesneler en çok bellek tüketiyor?",
+        "Veritabanı bağlantı havuzu boyutu kontrol edildi mi?"
+      ],
+      "evaluation_criteria": ["Sistematik teşhis yaklaşımı", "Profiling araçları bilgisi", "Kök neden analizi", "Çözüm önerileri"]
+    },
+    {
+      "id": "SC-002",
+      "category": "scenario_debugging",
+      "difficulty": "hard",
+      "interview_stage": "SCENARIO",
+      "question": "Bir API endpoint'i aralıklı olarak (intermittent) 502 Bad Gateway hatası veriyor. Hata her zaman değil, sadece yoğun saatlerde oluşuyor. Bu sorunu nasıl teşhis eder ve çözersin?",
+      "expected_answer": "Önce hataların zamanlaması ve frekansı log'lardan analiz edilir. Load balancer ile backend sunucuları arasındaki bağlantı timeout ayarları kontrol edilir. Backend sunucuların health check durumları incelenir. Olası nedenler: backend sunucuların aşırı yüklenmesi, bağlantı havuzu tükenmesi, timeout mismatch (load balancer backend'den önce timeout oluyor), bellek yetersizliği nedeniyle OOM killer. Çözümler: yatay ölçekleme, timeout ayarlarını senkronize etme, connection pool boyutunu artırma, auto-scaling kuralları, circuit breaker pattern ekleme.",
+      "hints": [
+        "502 hatası genelde load balancer'ın backend'den yanıt alamaması anlamına gelir.",
+        "Timeout chain'ini düşün: client, load balancer, backend, veritabanı.",
+        "Yoğun saatlerde hangi kaynak tükeniyor?"
+      ],
+      "evaluation_criteria": ["Log analizi yaklaşımı", "502 hata kaynağı bilgisi", "Timeout zinciri anlayışı", "Ölçekleme çözümleri"]
+    },
+    {
+      "id": "SC-003",
+      "category": "scenario_debugging",
+      "difficulty": "medium",
+      "interview_stage": "SCENARIO",
+      "question": "Bir veritabanı migration'ı production'da çalıştırdıktan sonra uygulamanın bazı endpoint'leri hata vermeye başladı ama diğerleri sorunsuz çalışıyor. Ne yaparsın?",
+      "expected_answer": "Önce hangi endpoint'lerin etkilendiği ve migration'da hangi tablo/sütun değişikliklerinin yapıldığı incelenir. Hatalı endpoint'lerin kullandığı sorguların yeni şemayla uyumluluğu kontrol edilir. Olası nedenler: kaldırılan veya yeniden adlandırılan sütunlar, NOT NULL constraint eklenmesi, foreign key değişiklikleri, ORM model/schema senkronizasyonu eksikliği. Acil çözüm olarak rollback planı değerlendirilir. Uzun vadede: migration'lar backward-compatible yazılmalı, blue-green deployment veya expand-contract pattern kullanılmalı, staging ortamında önce test edilmeli.",
+      "hints": [
+        "Migration'da hangi sütunlar değişti?",
+        "ORM modelleri güncellendi mi?",
+        "Rollback migration hazır mı?"
+      ],
+      "evaluation_criteria": ["Hata izolasyonu", "Migration analizi", "Rollback stratejisi", "Backward-compatible migration bilgisi"]
+    },
+    {
+      "id": "SC-004",
+      "category": "scenario_debugging",
+      "difficulty": "hard",
+      "interview_stage": "SCENARIO",
+      "question": "Ekibindeki bir geliştirici yanlışlıkla production veritabanında kritik bir tablodaki verileri sildi. Yedek var ama 6 saat öncesine ait. Bu krizi nasıl yönetirsin?",
+      "expected_answer": "Önce tabloya yapılan tüm yazma işlemleri durdurulur veya read-only moda alınır. Point-in-time recovery (PITR) destekleniyorsa WAL/binlog'lardan silinme anına kadar ileri sarılır. Desteklenmiyorsa 6 saatlik yedekten tablo restore edilir ve aradaki 6 saatlik veri kaybı için: uygulama log'larından, event store'dan veya message queue'dan kayıp veriler yeniden oluşturulur. Etkilenen kullanıcılar bilgilendirilir. Post-mortem yapılarak: PITR aktifleştirilir, DELETE işlemleri için soft-delete mekanizması eklenir, production veritabanına doğrudan erişim kısıtlanır, yedekleme sıklığı artırılır.",
+      "hints": [
+        "WAL (Write-Ahead Log) veya binlog ile PITR mümkün mü?",
+        "Aradaki 6 saatlik veriyi nereden kurtarabilirsin?",
+        "Bu olayın tekrar yaşanmaması için ne yapılmalı?"
+      ],
+      "evaluation_criteria": ["Kriz yönetimi", "Recovery stratejisi", "Veri kurtarma yaklaşımı", "Önleme planı"]
+    },
+    {
+      "id": "SC-005",
+      "category": "scenario_debugging",
+      "difficulty": "medium",
+      "interview_stage": "SCENARIO",
+      "question": "Bir Docker container'ında çalışan uygulamanız lokalde sorunsuz çalışıyor ama production Kubernetes cluster'ında sürekli CrashLoopBackOff durumuna düşüyor. Nasıl teşhis edersin?",
+      "expected_answer": "kubectl describe pod ile pod event'leri ve exit code incelenir. kubectl logs ile container log'ları alınır. Olası nedenler: environment variable eksikliği, secret/configmap hatası, bellek limiti aşımı (OOMKilled), health check (liveness/readiness probe) başarısızlığı, veritabanı veya harici servise bağlanamama, dosya sistemi izin hataları. Teşhis adımları: exit code'a bak (137 = OOMKilled, 1 = uygulama hatası), resource limits kontrol et, probe ayarlarını incele, lokal ortamla environment farkını karşılaştır.",
+      "hints": [
+        "Exit code 137 ne anlama gelir?",
+        "Liveness probe timeout'u yeterli mi?",
+        "Environment variable'lar production'da doğru set edilmiş mi?"
+      ],
+      "evaluation_criteria": ["Kubernetes debugging bilgisi", "Exit code analizi", "Probe konfigürasyonu", "Ortam farkı analizi"]
+    },
+    {
+      "id": "DSA-001",
+      "category": "data_structures_algorithms",
+      "difficulty": "medium",
+      "interview_stage": "TECHNICAL_1",
+      "question": "Hash table nasıl çalışır? Hash collision nedir ve çözüm yöntemleri nelerdir? Python'daki dictionary'nin zaman karmaşıklığı nedir ve worst case senaryosu ne zaman oluşur?",
+      "expected_answer": "Hash table, key'leri bir hash fonksiyonu ile indekse çevirir ve O(1) ortalama erişim sağlar. Collision, farklı key'lerin aynı indekse hash'lenmesidir. Çözümler: chaining (her slotta linked list) ve open addressing (linear probing, quadratic probing, double hashing). Python dict ortalamada O(1) lookup, insert, delete sağlar. Worst case O(n)'dir ve tüm key'ler aynı slot'a hash'lendiğinde oluşur, ama Python'un hash fonksiyonu randomization ile bunu pratikte önler.",
+      "hints": [
+        "Hash fonksiyonunun amacı nedir?",
+        "Chaining ve open addressing farkı.",
+        "Python 3.7+ dict'lerin insertion order koruduğunu biliyor musun?"
+      ],
+      "evaluation_criteria": ["Hash table mekanizması", "Collision çözüm yöntemleri", "Zaman karmaşıklığı bilgisi"]
+    },
+    {
+      "id": "DSA-002",
+      "category": "data_structures_algorithms",
+      "difficulty": "hard",
+      "interview_stage": "TECHNICAL_1",
+      "question": "Big O notasyonunu açıkla. O(1), O(log n), O(n), O(n log n) ve O(n^2) karmaşıklıkların gerçek dünya örneklerini ver. Bir algoritmanın space complexity'si neden time complexity kadar önemlidir?",
+      "expected_answer": "Big O, algoritmanın girdi boyutu büyüdükçe çalışma süresinin nasıl ölçeklendiğini ifade eder. O(1): hash table lookup. O(log n): binary search. O(n): tek geçişli dizi tarama. O(n log n): merge sort, Tim sort. O(n^2): iç içe döngü, bubble sort. Space complexity önemlidir çünkü sınırlı bellek ortamlarında (mobil, embedded, büyük veri) algoritmanın bellekte ne kadar yer kapladığı performansı doğrudan etkiler. Örneğin merge sort O(n) ek bellek kullanırken, quick sort O(log n) kullanır.",
+      "hints": [
+        "Her karmaşıklık sınıfına bir gerçek dünya örneği ver.",
+        "1 milyon elemanlı bir dizide O(n^2) algoritma ne kadar sürer?",
+        "In-place sorting neden bellek açısından avantajlı?"
+      ],
+      "evaluation_criteria": ["Big O tanımı", "Karmaşıklık örnekleri", "Space complexity önemi"]
+    },
+    {
+      "id": "DSA-003",
+      "category": "data_structures_algorithms",
+      "difficulty": "medium",
+      "interview_stage": "TECHNICAL_1",
+      "question": "Stack ve Queue veri yapıları arasındaki fark nedir? Her birinin gerçek dünyada kullanım alanlarını örnekle açıkla. Python'da bu yapıları hangi modüllerle implement edersin?",
+      "expected_answer": "Stack LIFO (Last In First Out), Queue FIFO (First In First Out) prensibine göre çalışır. Stack kullanım alanları: fonksiyon çağrı yığını, undo/redo işlemleri, parantez eşleştirme, DFS. Queue kullanım alanları: görev kuyruğu, BFS, yazıcı kuyruğu, mesaj kuyrukları. Python'da Stack için list (append/pop) veya collections.deque, Queue için collections.deque (append/popleft) veya queue.Queue (thread-safe) kullanılır. Priority Queue için heapq modülü tercih edilir.",
+      "hints": [
+        "LIFO ve FIFO kısaltmalarını aç.",
+        "BFS ve DFS hangi veri yapısını kullanır?",
+        "Python'da list'i stack olarak kullanmanın dezavantajı var mı?"
+      ],
+      "evaluation_criteria": ["Stack vs Queue farkı", "Gerçek dünya örnekleri", "Python implementasyonu"]
+    },
+    {
+      "id": "DSA-004",
+      "category": "data_structures_algorithms",
+      "difficulty": "hard",
+      "interview_stage": "TECHNICAL_1",
+      "question": "Binary Search Tree nedir? Dengeli ve dengesiz ağaç arasındaki performans farkı nedir? AVL ve Red-Black Tree gibi self-balancing yapılar neden önemlidir?",
+      "expected_answer": "BST, her node'un sol alt ağacında kendinden küçük, sağ alt ağacında kendinden büyük değerler barındıran bir ağaç yapısıdır. Dengeli BST'de arama, ekleme ve silme O(log n)'dir. Dengesiz (dejenere) durumda linked list'e dönüşür ve O(n) olur. AVL tree her node'da yükseklik farkını maksimum 1'de tutar, daha katı denge sağlar, okuma ağırlıklı işlerde hızlıdır. Red-Black tree daha esnek denge kuralları ile daha az rotasyon yapar, yazma ağırlıklı işlerde avantajlıdır. Veritabanı indeksleri ve bellek yöneticileri bu yapıları kullanır.",
+      "hints": [
+        "Sıralı veri eklendiğinde BST nasıl bir şekil alır?",
+        "AVL tree ve Red-Black tree rotasyon farkı.",
+        "Veritabanları neden B-Tree tercih eder?"
+      ],
+      "evaluation_criteria": ["BST tanımı", "Dengeli vs dengesiz performans", "Self-balancing tree bilgisi"]
+    },
+    {
+      "id": "DSA-005",
+      "category": "data_structures_algorithms",
+      "difficulty": "medium",
+      "interview_stage": "TECHNICAL_1",
+      "question": "Recursion nedir ve iterasyon ile karşılaştırdığında avantajları ve dezavantajları nelerdir? Stack overflow nasıl oluşur? Python'da recursion limit nedir ve tail recursion optimize edilir mi?",
+      "expected_answer": "Recursion, fonksiyonun kendini çağırarak problemi alt problemlere böldüğü bir tekniktir. Avantajları: ağaç yapıları ve bölme-fethetme algoritmalarında daha okunabilir kod. Dezavantajları: her çağrı call stack'te yer kaplar, stack overflow riski ve genelde iterasyondan yavaştır. Python'da varsayılan recursion limiti 1000'dir (sys.setrecursionlimit ile değiştirilebilir). Python tail recursion optimizasyonu yapmaz, bu yüzden derin recursion'larda iteratif çözüm veya memoization tercih edilmelidir.",
+      "hints": [
+        "Fibonacci hesaplamada recursion ve iterasyon karşılaştır.",
+        "Memoization recursion'ı nasıl optimize eder?",
+        "Python neden tail call optimization yapmaz?"
+      ],
+      "evaluation_criteria": ["Recursion tanımı", "Avantaj/dezavantaj analizi", "Python recursion limit bilgisi"]
+    },
+    {
+      "id": "PY-006",
+      "category": "python_fundamentals",
+      "difficulty": "hard",
+      "interview_stage": "TECHNICAL_1",
+      "question": "Python'da Garbage Collection nasıl çalışır? Referans sayma (reference counting) mekanizması nedir ve döngüsel referansları (circular references) nasıl ele alır? Python'da memory leak (bellek sızıntısı) nasıl oluşur ve bunu tespit etmek için hangi araçları kullanırsın?",
+      "expected_answer": "Python birincil olarak referans sayma (reference counting) mekanizması kullanır: bir nesneye olan referans sayısı sıfıra düştüğünde nesne bellekten silinir. Ancak iki nesne birbirine referans verdiğinde (circular reference) sayaç sıfıra düşmez. Bu durumu çözmek için Python'un gc modülünde çalışan generational garbage collector devreye girer. Nesneleri 3 kuşağa (generation 0, 1, 2) ayırır ve periyodik olarak döngüsel referansları tespit edip temizler. Memory leak genellikle global listelere sürekli veri eklenmesi, __del__ yıkıcısındaki hatalar, C extension'lardaki düzgün serbest bırakılmayan kaynaklar veya kapatılmayan dosya/soket bağlantılarından oluşur. Tespit için tracemalloc, objgraph, memory_profiler ve gc.get_objects() kullanılabilir.",
+      "hints": [
+        "sys.getrefcount() ile bir nesnenin referans sayısını kontrol et.",
+        "gc modülündeki 3 kuşak (generation) ne anlama geliyor?",
+        "__del__ metodu neden tehlikeli olabilir?"
+      ],
+      "evaluation_criteria": ["Reference counting mekanizması", "Circular reference ve generational GC bilgisi", "Memory leak nedenleri ve tespit araçları"]
+    },
+    {
+      "id": "PY-007",
+      "category": "python_fundamentals",
+      "difficulty": "hard",
+      "interview_stage": "TECHNICAL_1",
+      "question": "Python'da multi-threading ve multi-processing arasındaki temel farklar nelerdir? Her birinin avantajları ve dezavantajları nelerdir? CPU-bound bir görevi hızlandırmak için hangisini seçersin ve neden? concurrent.futures modülü bu iki yaklaşımı nasıl birleştirir?",
+      "expected_answer": "Multi-threading aynı süreç içinde birden fazla iş parçacığı oluşturur, paylaşılan bellek kullanır ve context switch maliyeti düşüktür ancak GIL nedeniyle CPU-bound işlerde gerçek paralellik sağlanamaz. Multi-processing ayrı süreçler oluşturur, her sürecin kendi bellek alanı ve GIL'i vardır dolayısıyla CPU-bound işlerde gerçek paralellik sağlanır ancak süreçler arası iletişim (IPC) daha maliyetlidir ve bellek tüketimi yüksektir. CPU-bound görevler için multiprocessing, I/O-bound görevler için threading tercih edilir. concurrent.futures modülü ThreadPoolExecutor ve ProcessPoolExecutor ile her iki yaklaşımı aynı arayüz altında birleştirir, submit() ve map() metodları ile kolay paralellik sağlar.",
+      "hints": [
+        "Paylaşılan bellek (shared memory) avantaj mı yoksa risk mi?",
+        "Bir web scraper için hangisini seçerdin?",
+        "concurrent.futures.as_completed() ne işe yarar?"
+      ],
+      "evaluation_criteria": ["Threading vs Processing farkları", "GIL etkisi ve CPU/IO-bound ayrımı", "concurrent.futures bilgisi"]
+    },
+    {
+      "id": "SD-006",
+      "category": "system_design",
+      "difficulty": "hard",
+      "interview_stage": "TECHNICAL_2",
+      "question": "Veritabanı ölçeklemede Read Replica nedir ve hangi sorunları çözer? Sharding (yatay parçalama) nedir, hangi durumlarda zorunlu hale gelir? Shard key seçiminin performansa etkisini açıkla. Vertical scaling ile horizontal scaling arasındaki fark nedir?",
+      "expected_answer": "Read Replica, ana veritabanının salt okunur kopyalarıdır. Okuma yükünü birden fazla sunucuya dağıtarak ana sunucunun yazma işlemlerine odaklanmasını sağlar. Sharding, veriyi belirli bir anahtara göre birden fazla veritabanı sunucusuna böler. Tek bir sunucunun kapasitesini aştığında, çok büyük veri setlerinde veya coğrafi dağıtım gerektiğinde zorunlu hale gelir. Shard key seçimi kritiktir: kötü bir key (düşük kardinalite veya hot spot yaratan) verilerin dengesiz dağılmasına ve bazı shard'ların aşırı yüklenmesine neden olur. Vertical scaling tek sunucuya daha güçlü donanım eklemektir ve bir üst sınırı vardır. Horizontal scaling birden fazla sunucu ekleyerek ölçeklenir ve teorik olarak sınırsızdır.",
+      "hints": [
+        "Read Replica'da replication lag (gecikme) sorunu nasıl yönetilir?",
+        "User ID iyi bir shard key midir? Tarih bazlı shard key'in riski nedir?",
+        "Vertical scaling neden bir noktadan sonra yetersiz kalır?"
+      ],
+      "evaluation_criteria": ["Read Replica mekanizması", "Sharding kavramı ve shard key seçimi", "Vertical vs horizontal scaling"]
+    },
+    {
+      "id": "SD-007",
+      "category": "system_design",
+      "difficulty": "hard",
+      "interview_stage": "TECHNICAL_2",
+      "question": "Redis ve Memcached arasındaki temel farklar nelerdir? Hangi senaryolarda hangisini tercih edersin? Cache Invalidation (önbellek geçersiz kılma) neden zor bir problemdir? Cache-aside, Write-through ve Write-behind stratejilerini karşılaştır.",
+      "expected_answer": "Redis kalıcılık (persistence) desteği, zengin veri yapıları (list, set, sorted set, hash), pub/sub ve Lua scripting sunar. Memcached daha basit, sadece key-value, çoklu iş parçacığı desteği ile çok yüksek throughput sağlar. Basit oturum veya string önbellekleme için Memcached, karmaşık veri yapıları ve kalıcılık gereken durumlarda Redis tercih edilir. Cache invalidation zordur çünkü veri kaynağı ile önbellek arasındaki tutarlılığı garanti etmek gerekir. Cache-aside'da uygulama önce cache'e bakar, yoksa veritabanından çekip cache'e yazar. Write-through'da her yazma işlemi hem cache'e hem veritabanına eşzamanlı yazılır, tutarlılık yüksek ama yazma yavaştır. Write-behind'da önce cache'e yazılır, veritabanına asenkron olarak aktarılır, yazma hızlı ama veri kaybı riski vardır.",
+      "hints": [
+        "Redis'in RDB ve AOF persistence farkı nedir?",
+        "TTL (Time To Live) en basit invalidation stratejisi midir?",
+        "Cache stampede (thundering herd) problemi nedir?"
+      ],
+      "evaluation_criteria": ["Redis vs Memcached farkları", "Cache invalidation zorluğu", "Cache stratejileri karşılaştırması"]
+    },
+    {
+      "id": "SD-008",
+      "category": "system_design",
+      "difficulty": "hard",
+      "interview_stage": "TECHNICAL_2",
+      "question": "Mikroservis mimarisinde REST API, gRPC ve Message Broker (RabbitMQ/Kafka) iletişim modellerini karşılaştır. Her birinin güçlü ve zayıf yönleri nelerdir? Bir e-ticaret sisteminde sipariş oluşturma, ödeme işleme ve bildirim gönderme servislerini tasarlarken hangi iletişim modelini nerede kullanırsın?",
+      "expected_answer": "REST API HTTP tabanlı, anlaşılması kolay, geniş ekosistem ve araç desteği sunar ancak text-based (JSON) olduğu için veri boyutu büyük ve gecikme yüksek olabilir. gRPC Protocol Buffers ile binary serialization yapar, düşük gecikme ve yüksek performans sağlar, bidirectional streaming destekler ancak tarayıcı desteği sınırlıdır ve öğrenme eğrisi yüksektir. Message Broker asenkron, loosely coupled iletişim sağlar, servisler birbirinden bağımsız çalışır ve dayanıklılık yüksektir ancak mimari karmaşıklık artar. E-ticaret senaryosunda: sipariş oluşturma için REST veya gRPC (senkron, anında yanıt gerekir), ödeme işleme için senkron gRPC (düşük gecikme, güvenilirlik) ve bildirim gönderme için Kafka veya RabbitMQ (asenkron, kullanıcıyı bekletmez) kullanılır.",
+      "hints": [
+        "Protocol Buffers ve JSON arasındaki boyut ve hız farkı.",
+        "Ödeme işleminde asenkron iletişim riski nedir?",
+        "Kafka'nın log-based yapısı event sourcing ile nasıl uyuşur?"
+      ],
+      "evaluation_criteria": ["REST vs gRPC vs Message Broker karşılaştırması", "Senaryo bazlı doğru iletişim modeli seçimi", "Avantaj/dezavantaj analizi"]
+    },
+    {
+      "id": "SD-009",
+      "category": "system_design",
+      "difficulty": "medium",
+      "interview_stage": "TECHNICAL_2",
+      "question": "JWT (JSON Web Token) nasıl çalışır? Bir JWT token'ının 3 parçası nedir ve her biri ne içerir? Access token ile refresh token mimarisi neden gereklidir? JWT'nin güvenlik açısından bilinen riskleri nelerdir?",
+      "expected_answer": "JWT, Header (algoritma ve token tipi), Payload (kullanıcı bilgileri ve claim'ler) ve Signature (doğrulama imzası) olmak üzere 3 parçadan oluşur ve Base64URL ile kodlanıp nokta ile ayrılır. Access token kısa ömürlüdür (genelde 15-30 dakika) ve her istekte gönderilir. Refresh token uzun ömürlüdür (günler veya haftalar) ve access token süresi dolduğunda yenisini almak için kullanılır. Bu mimari gereklidir çünkü access token çalınırsa kısa ömrü sayesinde hasar sınırlanır, kullanıcı sürekli giriş yapmak zorunda kalmaz. JWT riskleri: token'lar sunucu tarafında iptal edilemez (stateless yapıda), secret key sızması tüm token'ları geçersiz kılar, payload şifrelenmez sadece kodlanır dolayısıyla hassas veri konmamalıdır, ve algorithm confusion saldırıları (alg: none veya RS256 yerine HS256 kullanımı) mümkündür.",
+      "hints": [
+        "JWT neden stateless'tır ve bu neden hem avantaj hem dezavantaj?",
+        "Access token 1 saat ömürlü olsa ve çalınsa ne olur?",
+        "Token blacklist veya token rotation stratejileri."
+      ],
+      "evaluation_criteria": ["JWT yapısı (3 parça)", "Access/Refresh token mimarisi", "Güvenlik riskleri bilgisi"]
+    },
+    {
+      "id": "AI-001",
+      "category": "ai_data_engineering",
+      "difficulty": "hard",
+      "interview_stage": "TECHNICAL_1",
+      "question": "RAG (Retrieval-Augmented Generation) mimarisinde LLM'lerin halüsinasyon sorunu nasıl minimize edilir? Chunk boyutu ve overlap stratejisi retrieval kalitesini nasıl etkiler? LangChain ve LlamaIndex arasındaki temel mimari farklar nelerdir ve hangi senaryoda hangisini tercih edersin?",
+      "expected_answer": "Halüsinasyon, LLM'in eğitim verisinde olmayan bilgileri uydurmasıdır. RAG'da minimize etmek için: retrieval kalitesini artırmak (daha iyi embedding modelleri ve reranking), prompt'a 'sadece verilen bağlamdan cevap ver, bilmiyorsan bilmediğini söyle' talimatı eklemek, chunk boyutunu optimize etmek (çok küçük chunk bağlam kaybettirir, çok büyük chunk gürültü ekler, genelde 500-1000 token arası), chunk overlap ile bilgi kopmasını önlemek ve citation/kaynak referansı zorunlu kılmak gerekir. LangChain genel amaçlı bir orkestrasyon framework'üdür, chain ve agent kavramları ile esnek pipeline'lar kurar, çok geniş entegrasyon desteği sunar. LlamaIndex veri indeksleme ve retrieval'a odaklanır, doküman yükleme, indeksleme ve sorgulamada daha optimize yapılar sunar. Karmaşık agent akışları için LangChain, doküman ağırlıklı soru-cevap sistemleri için LlamaIndex tercih edilir.",
+      "hints": [
+        "Temperature değerini düşürmek halüsinasyonu azaltır mı?",
+        "Semantic search ve keyword search'ü birleştiren hybrid search ne avantaj sağlar?",
+        "LangChain'in LCEL (LangChain Expression Language) yapısı ne kolaylık sağlar?"
+      ],
+      "evaluation_criteria": ["Halüsinasyon azaltma teknikleri", "Chunk stratejisi bilgisi", "LangChain vs LlamaIndex karşılaştırması"]
+    },
+    {
+      "id": "AI-002",
+      "category": "ai_data_engineering",
+      "difficulty": "hard",
+      "interview_stage": "TECHNICAL_1",
+      "question": "Phi-3 veya TinyLlama gibi küçük dil modellerini belirli bir göreve fine-tune ederken LoRA ve QLoRA teknikleri nasıl çalışır? Full fine-tuning yerine LoRA kullanmanın avantajları nelerdir? Rank (r) parametresinin model performansına etkisini açıkla.",
+      "expected_answer": "LoRA (Low-Rank Adaptation), büyük modelin orijinal ağırlık matrislerini dondurup yanlarına küçük, düşük rank'li iki matris (A ve B) ekler. Eğitim sırasında sadece bu küçük matrisler güncellenir, bu da eğitilebilir parametre sayısını yüzde 1'in altına düşürür. QLoRA ise modelin orijinal ağırlıklarını 4-bit'e kuantize ederek bellek kullanımını dramatik şekilde azaltır ve LoRA adaptörlerini bu kuantize model üzerine uygular. Full fine-tuning yerine LoRA kullanmanın avantajları: çok daha az GPU belleği gerektirir, eğitim süresi kısalır, birden fazla görev için farklı adaptörler saklanabilir ve orijinal model bozulmaz. Rank (r) parametresi adaptör matrislerinin boyutunu belirler. Düşük rank (4-8) daha az parametre ve hızlı eğitim sağlar ama karmaşık görevlerde yetersiz kalabilir. Yüksek rank (32-64) daha fazla ifade gücü sunar ama bellek ve süre artar. Görev karmaşıklığına göre dengelenmelidir.",
+      "hints": [
+        "LoRA'daki düşük rank varsayımı (low-rank hypothesis) nedir?",
+        "4-bit kuantizasyon doğrulukta ne kadar kayba yol açar?",
+        "Birden fazla LoRA adaptörünü aynı base model üzerinde nasıl kullanırsın?"
+      ],
+      "evaluation_criteria": ["LoRA mekanizması", "QLoRA ve kuantizasyon bilgisi", "Rank parametresi etkisi", "Full fine-tuning ile karşılaştırma"]
+    },
+    {
+      "id": "AI-003",
+      "category": "ai_data_engineering",
+      "difficulty": "hard",
+      "interview_stage": "TECHNICAL_1",
+      "question": "YOLO mimarisini kullanarak gerçek zamanlı nesne tespiti yaparken FPS (kare hızı) ve doğruluk (mAP) arasındaki dengeyi nasıl kurarsın? YOLOv8 ile YOLOv5 arasındaki temel mimari farklar nelerdir? Edge cihazlarda (Raspberry Pi, Jetson Nano) çalıştırırken hangi optimizasyon tekniklerini uygularsın?",
+      "expected_answer": "FPS ve doğruluk dengesi model boyutu, giriş çözünürlüğü ve donanıma bağlıdır. Küçük model varyantları (YOLOv8n, YOLOv8s) yüksek FPS ama düşük mAP, büyük varyantlar (YOLOv8l, YOLOv8x) yüksek mAP ama düşük FPS sağlar. Giriş çözünürlüğünü düşürmek (640x640 yerine 320x320) FPS'i artırır ama küçük nesneleri kaçırma riski oluşturur. YOLOv8, YOLOv5'e göre anchor-free detection kullanır, C2f modülü ile daha verimli feature extraction yapar, decoupled head ile sınıflandırma ve lokalizasyonu ayırır ve native olarak segmentasyon ve pose estimation destekler. Edge cihazlarda optimizasyon için: model pruning ile gereksiz nöronları budama, INT8 veya FP16 kuantizasyon, TensorRT veya ONNX Runtime ile inference optimizasyonu, model distillation ile küçük öğrenci model eğitme ve giriş çözünürlüğünü düşürme teknikleri uygulanır.",
+      "hints": [
+        "Anchor-based ve anchor-free detection farkı nedir?",
+        "TensorRT hangi donanımda en etkili?",
+        "mAP@0.5 ve mAP@0.5:0.95 metrikleri arasındaki fark."
+      ],
+      "evaluation_criteria": ["FPS vs doğruluk dengesi", "YOLO versiyon farkları", "Edge optimizasyon teknikleri"]
+    }
+  ]
+}
