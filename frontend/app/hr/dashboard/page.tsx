@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Briefcase, FileSearch, Trophy, ArrowUpRight, TrendingUp, Loader2, AlertTriangle, SearchX } from "lucide-react";
+import { Briefcase, FileSearch, Trophy, ArrowUpRight, TrendingUp, Loader2, AlertTriangle, SearchX, Trash2 } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface JobRow {
@@ -211,6 +211,9 @@ export default function DashboardPage(): React.JSX.Element {
                   <th className="px-6 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-white/20">
                     Onay Oranı
                   </th>
+                  <th className="px-6 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-white/20">
+                    İşlem
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -251,6 +254,24 @@ export default function DashboardPage(): React.JSX.Element {
                           {job.successRate}
                         </span>
                       </div>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                       <button
+                         onClick={async () => {
+                           if(!confirm("Bu ilanı silmek istediğinize emin misiniz?")) return;
+                           try {
+                             const res = await fetch(`/api/hr/jobs?id=${job.id}`, { method: "DELETE" });
+                             if(!res.ok) throw new Error("İlan silinemedi.");
+                             await fetchData();
+                           } catch(err: any) {
+                             alert(err.message);
+                           }
+                         }}
+                         className="p-1.5 rounded-lg hover:bg-red-500/10 text-zinc-500 hover:text-red-400 transition-colors"
+                         title="İlanı Sil"
+                       >
+                         <Trash2 className="h-4 w-4" />
+                       </button>
                     </td>
                   </tr>
                 ))}

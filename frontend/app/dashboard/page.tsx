@@ -70,13 +70,6 @@ export default function CandidateDashboard(): React.JSX.Element {
               </p>
             </div>
           </div>
-          <button
-            onClick={handleLogout}
-            className="self-start md:self-auto flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-950/30 px-5 py-2.5 text-sm font-semibold text-red-400 hover:bg-red-500/10 transition-all duration-200"
-          >
-            <LogOut className="h-4 w-4" />
-            Güvenli Çıkış
-          </button>
         </header>
 
         {error && (

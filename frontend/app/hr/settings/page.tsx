@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { Settings, Save, Loader2, AlertTriangle, ShieldCheck, UserX, UserPlus, FileSearch } from "lucide-react";
-import { motion } from "framer-motion";
 
 export default function HRSettingsPage(): React.JSX.Element {
   const [autoInvite, setAutoInvite] = useState<number>(80);
@@ -21,8 +20,8 @@ export default function HRSettingsPage(): React.JSX.Element {
         const data = await res.json();
         setAutoInvite(data.autoInviteThreshold || 80);
         setManualReview(data.manualReviewThreshold || 60);
-      } catch (err: any) {
-        setError(err.message);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : String(err));
       } finally {
         setIsLoading(false);
       }
@@ -48,8 +47,8 @@ export default function HRSettingsPage(): React.JSX.Element {
 
       if (!res.ok) throw new Error("Ayarlar kaydedilemedi.");
       setMessage("Ayarlar başarıyla güncellendi.");
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
       setIsSaving(false);
     }

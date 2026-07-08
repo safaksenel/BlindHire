@@ -47,16 +47,35 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     const cvUrl = `/uploads/${safeFilename}`;
 
+    // Generate simulated AI Evaluation Score
+    const techScore = Math.floor(Math.random() * (100 - 65 + 1)) + 65; // 65-100
+    const reliability = Math.floor(Math.random() * (100 - 75 + 1)) + 75; // 75-100
+
+    let status = "PENDING";
+    
+    // Check Auto-Invite Threshold
+    const hrSettings = await prisma.hRSettings.findFirst({
+      where: { companyId: (candidate as any).companyId || undefined }
+    });
+    
+    if (hrSettings && techScore >= hrSettings.autoInviteThreshold) {
+      status = "INTERVIEW_INVITED";
+      // TODO: Here we would trigger the Email API (Resend/SendGrid) for the interview link
+      console.log(`[AI-AGENT] Aday ${candidate.fullName} eYiYi aYt (${techScore} >= ${hrSettings.autoInviteThreshold}). Otomatik mAlakat maili gA nderiliyor...`);
+    }
+
     const newApp = await prisma.application.create({
       data: {
         candidateId: candidate.id,
         jobPostingId: jobId,
         cvUrl,
-        status: "PENDING",
+        status,
+        techScore,
+        reliability
       }
     });
 
-    return NextResponse.json({ message: "Başvuru alındı", applicationId: newApp.id }, { status: 201 });
+    return NextResponse.json({ message: "BaYvuru alnd", applicationId: newApp.id, status, techScore }, { status: 201 });
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: "Internal Server Error", details: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });

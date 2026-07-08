@@ -5,8 +5,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { User, LogOut } from "lucide-react";
 
-export function AuthNav() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+export function AuthNav({ isAuth = false }: { readonly isAuth?: boolean }) {
+  const [isAuthenticated, setIsAuthenticated] = useState(isAuth);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const router = useRouter();
 
@@ -14,13 +14,12 @@ export function AuthNav() {
     const checkAuth = () => {
       const hasAuthToken = document.cookie.includes("auth_token=authenticated");
       const hasHrToken = document.cookie.includes("hr_auth_token=authenticated");
-      setIsAuthenticated(hasAuthToken || hasHrToken);
+      setIsAuthenticated(hasAuthToken || hasHrToken || isAuth);
     };
     checkAuth();
-    // Optional: listen to custom events if needed, but simple check is fine here
     window.addEventListener("focus", checkAuth);
     return () => window.removeEventListener("focus", checkAuth);
-  }, []);
+  }, [isAuth]);
 
   const handleLogout = () => {
     const cookiesToClear = ["auth_token", "hr_auth_token", "user_role", "user_id"];

@@ -3,10 +3,10 @@ import { prisma } from "@/lib/prisma";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
   try {
-    const { id } = params;
+    const { id } = await params;
     const userId = request.cookies.get("user_id")?.value;
     if (!userId) {
       return NextResponse.json({ message: "Oturum açılmamış." }, { status: 401 });
