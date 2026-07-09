@@ -163,6 +163,7 @@ class InterviewOrchestrator:
         # RAG Retriever ve dinamik soru yapısını ilklendir
         self.retriever = QuestionRetriever()
         self.selected_questions: Dict[InterviewState, Dict[str, Any]] = {}
+        self.candidate_background_text: str = ""
 
     def process_input(self, user_text: str, interrupted: bool = False, unfinished_ai_text: str = "") -> str:
         """
@@ -200,6 +201,10 @@ class InterviewOrchestrator:
         # Adayın boş mesaj göndermesini engelle
         if not user_text:
             return "Lütfen sesinizi veya metin cevabınızı mülakat sistemine iletin."
+
+        # Adayın deneyim geçmişi aşamasındaysak metni semantik arama sorgusu için sakla
+        if self.current_state == InterviewState.BACKGROUND:
+            self.candidate_background_text = user_text
 
         # 3. Söz Kesme (Interrupt) Yönetimi
         if interrupted:
@@ -350,35 +355,60 @@ class InterviewOrchestrator:
     def _select_question_for_state(self, state: InterviewState) -> Dict[str, Any]:
         """
         Belirtilen mülakat durumu için veritabanından uygun bir soru seçer.
+        Adayın background deneyim metnine göre semantik arama (RAG) yapar.
         """
         if state in self.selected_questions:
             return self.selected_questions[state]
 
         questions = []
+        query = self.candidate_background_text.strip()
+
         if state == InterviewState.TECHNICAL_1:
-            # TECHNICAL_1 aşaması için python_fundamentals veya data_structures_algorithms kategorilerinden soru seç
+            # TECHNICAL_1 aşaması için python_fundamentals veya data_structures_algorithms
             cats = ["python_fundamentals", "data_structures_algorithms"]
-            for cat in cats:
-                questions.extend(self.retriever.get_questions_by_stage("TECHNICAL_1"))
-            questions = [q for q in questions if q["category"] in cats]
+            if query:
+                # Semantik arama ile en uygun 5 soruyu bul
+                search_results = self.retriever.search(query, k=5, interview_stage="TECHNICAL_1")
+                # Kategorileri filtrele
+                questions = [q for q in search_results if q["category"] in cats]
+            
+            if not questions:
+                questions = self.retriever.get_questions_by_stage("TECHNICAL_1")
+                questions = [q for q in questions if q["category"] in cats]
+
         elif state == InterviewState.TECHNICAL_2:
-            # TECHNICAL_2 aşaması için system_design kategorisinden soru seç
-            questions = self.retriever.get_questions_by_stage("TECHNICAL_2")
+            # TECHNICAL_2 aşaması için system_design
+            if query:
+                questions = self.retriever.search(query, k=3, category="system_design", interview_stage="TECHNICAL_2")
+            if not questions:
+                questions = self.retriever.get_questions_by_stage("TECHNICAL_2")
+
         elif state == InterviewState.SCENARIO:
-            # SCENARIO aşaması için scenario_debugging kategorisinden soru seç
-            questions = self.retriever.get_questions_by_stage("SCENARIO")
+            # SCENARIO aşaması için scenario_debugging
+            if query:
+                questions = self.retriever.search(query, k=3, category="scenario_debugging", interview_stage="SCENARIO")
+            if not questions:
+                questions = self.retriever.get_questions_by_stage("SCENARIO")
 
         if not questions:
-            # Fallback (soru bulunamazsa varsayılan boş bir yapı döndür)
+            # Fallback
             return {
+                "id": "FALLBACK-001",
+                "category": "python_fundamentals",
+                "difficulty": "medium",
+                "interview_stage": state.value,
                 "question": "Teknik deneyimlerinizden ve karşılaştığınız zorluklardan bahseder misiniz?",
                 "expected_answer": "Adayın problem çözme yaklaşımı.",
                 "hints": ["Zorluklar", "Çözümler"],
                 "evaluation_criteria": ["Deneyim"]
             }
 
-        # Seçilen sorular arasından rastgele birini al
-        selected = random.choice(questions)
+        # Eğer get_questions_by_stage ile statik listeden çekilmişse (relevance_score yoksa) rastgele seç
+        if "relevance_score" not in questions[0]:
+            selected = random.choice(questions)
+        else:
+            selected = questions[0]
+
         self.selected_questions[state] = selected
         return selected
 
