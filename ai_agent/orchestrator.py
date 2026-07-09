@@ -164,12 +164,14 @@ class InterviewOrchestrator:
         self.retriever = QuestionRetriever()
         self.selected_questions: Dict[InterviewState, Dict[str, Any]] = {}
 
-    def process_input(self, user_text: str) -> str:
+    def process_input(self, user_text: str, interrupted: bool = False, unfinished_ai_text: str = "") -> str:
         """
         Adaydan gelen metin girdisini işler, mülakat durumunu yönetir ve bir sonraki yanıtı döner.
         
         Args:
             user_text: Adayın yazdığı metin girdisi. (Mülakatı başlatmak için boş bırakılabilir veya '/start' girilebilir)
+            interrupted: Adayın ajanın sözünü kesip kesmediği bilgisi.
+            unfinished_ai_text: Söz kesildiğinde ajanın söyleyebildiği yarım kalan metin.
         Returns:
             str: Yapay zeka ajanının cevabı.
         """
@@ -199,16 +201,37 @@ class InterviewOrchestrator:
         if not user_text:
             return "Lütfen sesinizi veya metin cevabınızı mülakat sistemine iletin."
 
-        # 3. Aday girdisini hafızaya ekle
-        self.chat_history.append(HumanMessage(content=user_text))
+        # 3. Söz Kesme (Interrupt) Yönetimi
+        if interrupted:
+            # Hafızadaki en son mesajı bul ve yarım kalan metinle güncelle
+            if self.chat_history and isinstance(self.chat_history[-1], AIMessage):
+                if unfinished_ai_text:
+                    self.chat_history[-1].content = self._clean_response_for_tts(unfinished_ai_text)
+            
+            # Adayın söz kestiğini belirtecek şekilde girdiyi formatlayarak ekle
+            formatted_user_text = f"[Aday söz keserek araya girdi]: {user_text}"
+            self.chat_history.append(HumanMessage(content=formatted_user_text))
+            
+            # Söz kesme durumunda mülakat durum geçişini engelliyoruz (aynı state'de kalıyoruz)
+        else:
+            # Normal akış: Aday girdisini doğrudan ekle ve durumu ilerlet
+            self.chat_history.append(HumanMessage(content=user_text))
+            self._advance_state()
 
-        # 4. Durum Geçiş Yönetimi (Turn-based / Sıralı Doğrusal Geçiş)
-        # Her adımla birlikte mülakat durumunu bir sonraki aşamaya taşırız.
-        self._advance_state()
-
-        # 5. Güncel durum için sistem promptu ile LLM yanıtı oluştur
+        # 4. Güncel durum için sistem promptu ile LLM yanıtı oluştur
         system_prompt = self._get_system_prompt()
-        messages = [system_prompt] + self.chat_history
+        messages = [system_prompt]
+
+        # Eğer söz kesilmişse, LLM'e durumu yönetmesi için geçici bir sistem talimatı ekle
+        if interrupted:
+            interrupt_instruction = SystemMessage(content=(
+                "ÖNEMLİ TALİMAT: Aday az önce senin sözünü keserek araya girdi. "
+                "Nazikçe bu durumu karşıla (örneğin doğrudan adayın sorusunu yanıtlayabilir veya 'Tabii ki, açıklayayım' diyerek konuyu toparlayabilirsin). "
+                "Adayın araya girerek sorduğu soruyu veya itirazını yanıtla, ardından aynı mülakat aşamasına ait sorunu/senaryonu tamamla veya tekrar et."
+            ))
+            messages.append(interrupt_instruction)
+
+        messages.extend(self.chat_history)
 
         try:
             response = self.model.invoke(messages)
