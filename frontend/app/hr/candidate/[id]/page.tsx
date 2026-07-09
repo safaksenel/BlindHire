@@ -67,9 +67,9 @@ const TRANSCRIPT: readonly TranscriptLine[] = [
 ] as const;
 
 const SEVERITY_STYLES: Record<ProctorSeverity, { dot: string; bg: string; text: string }> = {
-  low: { dot: "bg-amber-500", bg: "bg-amber-500/[0.06] border-amber-500/10", text: "text-amber-400/70" },
+  low: { dot: "bg-theme-2", bg: "bg-theme-2/[0.06] border-theme-2/10", text: "text-theme-2/70" },
   negligible: { dot: "bg-zinc-500", bg: "bg-zinc-500/[0.04] border-zinc-500/10", text: "text-zinc-400/60" },
-  clean: { dot: "bg-emerald-500", bg: "bg-emerald-500/[0.04] border-emerald-500/10", text: "text-emerald-400/60" },
+  clean: { dot: "bg-theme-1", bg: "bg-theme-1/[0.04] border-theme-1/10", text: "text-theme-1/60" },
 } as const;
 
 /* ══════════════════════════════════════════════════════
@@ -92,7 +92,7 @@ function CustomTooltip({ active, payload }: CustomTooltipProps): React.JSX.Eleme
   return (
     <div className="rounded-lg border border-white/[0.08] bg-zinc-900/95 px-3 py-2 shadow-xl backdrop-blur-sm">
       <p className="text-xs font-medium text-white/70">{item.payload.subject}</p>
-      <p className="mt-0.5 text-sm font-bold text-blue-400">{item.value}/100</p>
+      <p className="mt-0.5 text-sm font-bold text-theme-1">{item.value}/100</p>
     </div>
   );
 }
@@ -131,7 +131,7 @@ export default function CandidatePage({ params }: CandidatePageProps): React.JSX
   if (isLoading) {
     return (
       <div className="flex h-full min-h-[400px] flex-col items-center justify-center space-y-4">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+        <Loader2 className="h-8 w-8 animate-spin text-theme-1" />
         <p className="text-sm text-white/50">Scorecard yükleniyor...</p>
       </div>
     );
@@ -144,7 +144,7 @@ export default function CandidatePage({ params }: CandidatePageProps): React.JSX
           <AlertTriangle className="h-6 w-6" />
           <p>{error || "Aday bulunamadı."}</p>
         </div>
-        <Link href="/hr/pipeline" className="text-sm text-blue-400 hover:underline">
+        <Link href="/hr/pipeline" className="text-sm text-theme-1 hover:underline">
           Hunisiye Dön
         </Link>
       </div>
@@ -168,8 +168,8 @@ export default function CandidatePage({ params }: CandidatePageProps): React.JSX
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-2">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500/15 to-purple-500/15 ring-1 ring-white/[0.06]">
-              <Hash className="h-4 w-4 text-blue-400" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-theme-1/15 to-theme-2/15 ring-1 ring-white/[0.06]">
+              <Hash className="h-4 w-4 text-theme-1" />
             </div>
             <div>
               <h1 className="text-xl font-bold text-white">
@@ -182,15 +182,15 @@ export default function CandidatePage({ params }: CandidatePageProps): React.JSX
                 </span>
               </p>
               {showIdentity && (
-                  <p className="text-xs text-blue-400/80 mt-1">{data.email}</p>
+                  <p className="text-xs text-theme-1/80 mt-1">{data.email}</p>
               )}
             </div>
           </div>
           <div className="flex items-center gap-2 pl-[52px]">
             <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] font-medium ${
                 data.status === "COMPLETED" 
-                    ? "border-emerald-500/15 bg-emerald-500/[0.06] text-emerald-400"
-                    : "border-amber-500/15 bg-amber-500/[0.06] text-amber-400"
+                    ? "border-theme-1/15 bg-theme-1/[0.06] text-theme-1"
+                    : "border-theme-2/15 bg-theme-2/[0.06] text-theme-2"
             }`}>
               {data.status === "COMPLETED" ? <CheckCircle2 className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
               {data.status === "COMPLETED" ? "Mülakat Tamamlandı" : "Değerlendirmede"}
@@ -203,7 +203,7 @@ export default function CandidatePage({ params }: CandidatePageProps): React.JSX
           <button
             type="button"
             onClick={() => setShowIdentity(!showIdentity)}
-            className="inline-flex items-center gap-2 rounded-xl border border-amber-500/15 bg-amber-500/[0.06] px-4 py-2.5 text-xs font-semibold text-amber-400 transition-all duration-300 hover:border-amber-500/25 hover:bg-amber-500/[0.1]"
+            className="inline-flex items-center gap-2 rounded-xl border border-theme-2/15 bg-theme-2/[0.06] px-4 py-2.5 text-xs font-semibold text-theme-2 transition-all duration-300 hover:border-theme-2/25 hover:bg-theme-2/[0.1]"
           >
             <Unlock className="h-3.5 w-3.5" />
             {showIdentity ? "Kimliği Gizle" : "Kimliği Aç"}
@@ -213,7 +213,7 @@ export default function CandidatePage({ params }: CandidatePageProps): React.JSX
               href={data.cvUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-xl border border-blue-500/15 bg-blue-500/[0.06] px-4 py-2.5 text-xs font-semibold text-blue-400 transition-all duration-300 hover:border-blue-500/25 hover:bg-blue-500/[0.1]"
+              className="inline-flex items-center gap-2 rounded-xl border border-theme-1/15 bg-theme-1/[0.06] px-4 py-2.5 text-xs font-semibold text-theme-1 transition-all duration-300 hover:border-theme-1/25 hover:bg-theme-1/[0.1]"
             >
               <FileText className="h-3.5 w-3.5" />
               CV Görüntüle
@@ -239,8 +239,8 @@ export default function CandidatePage({ params }: CandidatePageProps): React.JSX
         {/* ─── TOP LEFT: AI Executive Summary ─── */}
         <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015]">
           <div className="flex items-center gap-2.5 border-b border-white/[0.06] px-6 py-4">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-purple-500/10">
-              <Brain className="h-3.5 w-3.5 text-purple-400" />
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-theme-2/10">
+              <Brain className="h-3.5 w-3.5 text-theme-2" />
             </div>
             <h2 className="text-sm font-semibold text-white/70">
               AI Yönetici Özeti
@@ -251,16 +251,16 @@ export default function CandidatePage({ params }: CandidatePageProps): React.JSX
               Aday, {data.role} gereksinimlerine <span className="font-medium text-white/60">{data.techScore >= 75 ? "yüksek oranda" : "orta düzeyde"} uyum</span> gösterdi. Teknik analizlerde tutarlı cevaplar verirken iletişim becerileri yeterli bulundu.
             </p>
             <div className="mt-5 flex gap-3">
-              <div className="flex-1 rounded-xl border border-blue-500/10 bg-blue-500/[0.04] p-3 text-center">
-                <p className="text-xl font-bold text-blue-400">{data.techScore}</p>
+              <div className="flex-1 rounded-xl border border-theme-1/10 bg-theme-1/[0.04] p-3 text-center">
+                <p className="text-xl font-bold text-theme-1">{data.techScore}</p>
                 <p className="mt-0.5 text-[10px] text-white/25">Teknik Skor</p>
               </div>
-              <div className="flex-1 rounded-xl border border-emerald-500/10 bg-emerald-500/[0.04] p-3 text-center">
-                <p className="text-xl font-bold text-emerald-400">%{data.reliability}</p>
+              <div className="flex-1 rounded-xl border border-theme-1/10 bg-theme-1/[0.04] p-3 text-center">
+                <p className="text-xl font-bold text-theme-1">%{data.reliability}</p>
                 <p className="mt-0.5 text-[10px] text-white/25">Güvenilirlik</p>
               </div>
-              <div className="flex-1 rounded-xl border border-purple-500/10 bg-purple-500/[0.04] p-3 text-center">
-                <p className="text-xl font-bold text-purple-400">{overallGrade}</p>
+              <div className="flex-1 rounded-xl border border-theme-2/10 bg-theme-2/[0.04] p-3 text-center">
+                <p className="text-xl font-bold text-theme-2">{overallGrade}</p>
                 <p className="mt-0.5 text-[10px] text-white/25">Genel Derece</p>
               </div>
             </div>
@@ -270,8 +270,8 @@ export default function CandidatePage({ params }: CandidatePageProps): React.JSX
         {/* ─── TOP RIGHT: Radar Chart ─── */}
         <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015]">
           <div className="flex items-center gap-2.5 border-b border-white/[0.06] px-6 py-4">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-500/10">
-              <Eye className="h-3.5 w-3.5 text-blue-400" />
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-theme-1/10">
+              <Eye className="h-3.5 w-3.5 text-theme-1" />
             </div>
             <h2 className="text-sm font-semibold text-white/70">
               Yetkinlik Radarı
@@ -334,8 +334,8 @@ export default function CandidatePage({ params }: CandidatePageProps): React.JSX
         {/* ─── BOTTOM LEFT: Proctoring Log ─── */}
         <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015]">
           <div className="flex items-center gap-2.5 border-b border-white/[0.06] px-6 py-4">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500/10">
-              <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-theme-1/10">
+              <ShieldCheck className="h-3.5 w-3.5 text-theme-1" />
             </div>
             <h2 className="text-sm font-semibold text-white/70">
               Proctoring Log
@@ -360,7 +360,7 @@ export default function CandidatePage({ params }: CandidatePageProps): React.JSX
                         {event.type}
                       </span>
                       {event.severity === "low" && (
-                        <AlertTriangle className="h-3 w-3 text-amber-500/40" />
+                        <AlertTriangle className="h-3 w-3 text-theme-2/40" />
                       )}
                     </div>
                     <p className="mt-1 text-xs text-white/35">{event.detail}</p>
@@ -374,8 +374,8 @@ export default function CandidatePage({ params }: CandidatePageProps): React.JSX
         {/* ─── BOTTOM RIGHT: Anonymous Transcript ─── */}
         <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015]">
           <div className="flex items-center gap-2.5 border-b border-white/[0.06] px-6 py-4">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-cyan-500/10">
-              <ScrollText className="h-3.5 w-3.5 text-cyan-400" />
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-theme-3/10">
+              <ScrollText className="h-3.5 w-3.5 text-theme-3" />
             </div>
             <h2 className="text-sm font-semibold text-white/70">
               Transkript
@@ -396,8 +396,8 @@ export default function CandidatePage({ params }: CandidatePageProps): React.JSX
                   <span
                     className={`text-[10px] font-semibold uppercase tracking-wider ${
                       line.speaker === "ai"
-                        ? "text-blue-400/50"
-                        : "text-emerald-400/50"
+                        ? "text-theme-1/50"
+                        : "text-theme-1/50"
                     }`}
                   >
                     {line.speaker === "ai" ? "AgenticHR" : (showIdentity ? data.fullName : `Aday #${data.id.substring(0, 5)}`)}

@@ -108,15 +108,15 @@ function CandidateCardUI({
 
       {card.techScore != null && card.reliability != null && (
         <div className="mt-3 flex flex-wrap gap-2">
-          <div className="flex items-center gap-1.5 rounded-lg border border-blue-500/10 bg-blue-500/[0.06] px-2.5 py-1">
-            <Brain className="h-3 w-3 text-blue-400" />
-            <span className="text-[11px] font-medium text-blue-300">
+          <div className="flex items-center gap-1.5 rounded-lg border border-theme-1/10 bg-theme-1/[0.06] px-2.5 py-1">
+            <Brain className="h-3 w-3 text-theme-1" />
+            <span className="text-[11px] font-medium text-theme-1">
               AI Skoru: {card.techScore}/100
             </span>
           </div>
-          <div className="flex items-center gap-1.5 rounded-lg border border-emerald-500/10 bg-emerald-500/[0.06] px-2.5 py-1">
-            <ShieldCheck className="h-3 w-3 text-emerald-400" />
-            <span className="text-[11px] font-medium text-emerald-300">
+          <div className="flex items-center gap-1.5 rounded-lg border border-theme-1/10 bg-theme-1/[0.06] px-2.5 py-1">
+            <ShieldCheck className="h-3 w-3 text-theme-1" />
+            <span className="text-[11px] font-medium text-theme-1">
               Güven: %{card.reliability}
             </span>
           </div>
@@ -131,7 +131,7 @@ function CandidateCardUI({
               href={card.cvUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex w-full items-center justify-center gap-2 rounded-lg border border-blue-500/15 bg-blue-500/[0.06] px-3 py-2 text-[11px] font-semibold text-blue-400 hover:bg-blue-500/[0.1] transition-all"
+              className="flex w-full items-center justify-center gap-2 rounded-lg border border-theme-1/15 bg-theme-1/[0.06] px-3 py-2 text-[11px] font-semibold text-theme-1 hover:bg-theme-1/[0.1] transition-all"
             >
               <FileText className="h-3.5 w-3.5" />
               CV Görüntüle
@@ -152,7 +152,7 @@ function CandidateCardUI({
                 key="invited"
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="flex items-center justify-center gap-2 rounded-lg border border-emerald-500/15 bg-emerald-500/[0.06] py-2 text-[11px] font-semibold text-emerald-400"
+                className="flex items-center justify-center gap-2 rounded-lg border border-theme-1/15 bg-theme-1/[0.06] py-2 text-[11px] font-semibold text-theme-1"
               >
                 <UserCheck className="h-3.5 w-3.5" />
                 Davet Gönderildi
@@ -166,7 +166,7 @@ function CandidateCardUI({
                   className={`flex w-full items-center justify-center gap-2 rounded-lg px-3 py-2 text-[11px] font-semibold transition-all duration-300 ${
                     inviteStatus === "inviting"
                       ? "cursor-not-allowed border border-white/[0.04] bg-white/[0.02] text-white/20"
-                      : "border border-emerald-500/15 bg-emerald-500/[0.06] text-emerald-400 hover:bg-emerald-500/[0.1]"
+                      : "border border-theme-1/15 bg-theme-1/[0.06] text-theme-1 hover:bg-theme-1/[0.1]"
                   }`}
                 >
                   {inviteStatus === "inviting" ? (
@@ -192,7 +192,7 @@ function CandidateCardUI({
         {onApprove && (
           <button
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); onApprove(card); }}
-            className="flex-1 flex items-center justify-center gap-1.5 rounded-lg border border-emerald-500/15 bg-emerald-500/[0.06] py-2 text-[11px] font-semibold text-emerald-400 hover:bg-emerald-500/[0.1] transition-all"
+            className="flex-1 flex items-center justify-center gap-1.5 rounded-lg border border-theme-1/15 bg-theme-1/[0.06] py-2 text-[11px] font-semibold text-theme-1 hover:bg-theme-1/[0.1] transition-all"
           >
             <CheckCircle2 className="h-3.5 w-3.5" />
             Onayla
@@ -244,22 +244,22 @@ export default function PipelinePage(): React.JSX.Element {
         {
           key: "manual_review",
           title: "Mülakat Daveti Bekleyen",
-          icon: <Clock className="h-4 w-4 text-amber-400/60" />,
-          accentBorder: "border-t-amber-500/20",
+          icon: <Clock className="h-4 w-4 text-theme-2/60" />,
+          accentBorder: "border-t-theme-2/20",
           cards: data.manual_review || [],
         },
         {
           key: "invited",
           title: "Davet Gönderildi",
-          icon: <Send className="h-4 w-4 text-blue-400/60" />,
-          accentBorder: "border-t-blue-500/20",
+          icon: <Send className="h-4 w-4 text-theme-1/60" />,
+          accentBorder: "border-t-theme-1/20",
           cards: data.invited || [],
         },
         {
           key: "completed",
           title: "Mülakat Tamamlandı",
-          icon: <CheckCircle2 className="h-4 w-4 text-emerald-400/60" />,
-          accentBorder: "border-t-emerald-500/20",
+          icon: <CheckCircle2 className="h-4 w-4 text-theme-1/60" />,
+          accentBorder: "border-t-theme-1/20",
           cards: data.completed || [],
         },
       ];
@@ -279,25 +279,7 @@ export default function PipelinePage(): React.JSX.Element {
     setInviteStatuses((prev) => ({ ...prev, [card.id]: "inviting" }));
 
     try {
-      // Generate password
-      const password = Math.random().toString(36).slice(-8).toUpperCase();
-      const inviteUrl = `${window.location.origin}/interview?token=${card.id}`;
-
-      // Trigger email
-      const emailRes = await fetch("/api/send-email", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: card.email,
-          candidateName: card.fullName,
-          interviewLink: inviteUrl,
-          interviewPassword: password
-        })
-      });
-
-      if (!emailRes.ok) throw new Error("E-posta gönderilemedi.");
-
-      // Change status to INVITED
+      // Change status to INVITED - backend handles email and ID generation
       const statusRes = await fetch("/api/hr/pipeline", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -352,7 +334,7 @@ export default function PipelinePage(): React.JSX.Element {
   if (isLoading) {
     return (
       <div className="flex h-full min-h-[400px] flex-col items-center justify-center space-y-4">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+        <Loader2 className="h-8 w-8 animate-spin text-theme-1" />
         <p className="text-sm text-white/50">Aday hunisi yükleniyor...</p>
       </div>
     );

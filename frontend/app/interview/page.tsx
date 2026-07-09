@@ -303,10 +303,10 @@ export default function InterviewPage(): React.JSX.Element {
                       key={i}
                       className="w-[3px] rounded-full bg-emerald-400/40"
                       animate={{
-                        height: ["12px", `${22 + (i % 5) * 7}px`, "12px"],
+                        height: ["12px", `${22 + Math.random() * 28}px`, "12px"],
                       }}
                       transition={{
-                        duration: 0.6 + (i % 3) * 0.2,
+                        duration: 0.6 + Math.random() * 0.4,
                         repeat: Infinity,
                         ease: "easeInOut",
                         delay: i * 0.08,

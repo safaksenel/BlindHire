@@ -65,7 +65,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     const application = await prisma.application.findUnique({
         where: { id: applicationId },
-        include: { jobPosting: true }
+        include: { jobPosting: true, candidate: true }
     });
 
     if (!application) return NextResponse.json({ message: "Başvuru bulunamadı." }, { status: 404 });
@@ -73,12 +73,44 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         return NextResponse.json({ message: "Yetkisiz." }, { status: 403 });
     }
 
+    let finalStatus = newStatus;
+    let interviewId = null;
+    let pass = null;
+
+    if ((newStatus === "INVITED" || newStatus === "INTERVIEW_INVITED") && application.status !== "INVITED" && application.status !== "INTERVIEW_INVITED") {
+        finalStatus = "INTERVIEW_INVITED"; // standardize on INTERVIEW_INVITED
+        interviewId = Math.random().toString(36).substring(2, 10);
+        pass = Math.random().toString(36).substring(2, 8).toUpperCase();
+    }
+
     await prisma.application.update({
         where: { id: applicationId },
-        data: { status: newStatus }
+        data: { 
+            status: finalStatus,
+            ...(interviewId && { interviewId }),
+            ...(pass && { interviewPassword: pass })
+        }
     });
 
-    return NextResponse.json({ message: `Aday statüsü ${newStatus} olarak güncellendi.` });
+    if (interviewId && pass) {
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+      try {
+        fetch(`${baseUrl}/api/send-email`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: application.candidate?.email,
+            candidateName: application.candidate?.fullName,
+            interviewLink: `${baseUrl}/interview/${interviewId}`,
+            interviewPassword: pass,
+          })
+        }).catch(e => console.error("Pipeline manual Mail Error:", e));
+      } catch (e) {
+        console.error("Fetch API error:", e);
+      }
+    }
+
+    return NextResponse.json({ message: `Aday statüsü ${finalStatus} olarak güncellendi.` });
   } catch (err) {
     console.error(err);
     return NextResponse.json({ message: "Sunucu hatası." }, { status: 500 });

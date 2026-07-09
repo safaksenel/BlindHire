@@ -1,13 +1,42 @@
 @import "tailwindcss";
 
 @theme inline {
-  --color-background: #050508;
+  --color-theme-1: var(--theme-c1);
+  --color-theme-2: var(--theme-c2);
+  --color-theme-3: var(--theme-c3);
+  --color-theme-4: var(--theme-c4);
+  --color-theme-5: var(--theme-c5);
+  --color-background: #0B1310;
   --color-foreground: #e8e8ec;
   --color-muted: #a1a1aa;
-  --color-accent-blue: #3b82f6;
-  --color-accent-purple: #8b5cf6;
-  --color-accent-cyan: #06b6d4;
-  --color-surface: #0c0c12;
+  
+  /* Accent Overrides */
+  --color-accent-blue: #00FFFF;
+  --color-accent-purple: #E55934;
+  --color-accent-cyan: #00A896;
+
+  /* Blue mapped to Pink (#FF1D58) */
+  --color-blue-300: #ff85c0;
+  --color-blue-400: #ff59aa;
+  --color-blue-500: #00FFFF;
+  --color-blue-600: #FF7F11;
+  --color-blue-700: #99004d;
+  
+  /* Purple mapped to Yellow (#FFF685) */
+  --color-purple-300: #e60074;
+  --color-purple-400: #b3005a;
+  --color-purple-500: #E55934;
+  --color-purple-600: #400020;
+  --color-purple-700: #1a000d;
+  
+  /* Cyan mapped to Bright Blue (#00DDFF) */
+  --color-cyan-300: #7a005e;
+  --color-cyan-400: #52003f;
+  --color-cyan-500: #00A896;
+  --color-cyan-600: #170012;
+  --color-cyan-700: #050004;
+
+  --color-surface: #00A896;
   --color-border: rgba(255, 255, 255, 0.06);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
@@ -44,7 +73,14 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: transparent !important;
+}
+
+/* Hide Next.js Dev Indicator */
+nextjs-portal,
+#nextjs-portal,
+[data-nextjs-toast] {
+  display: none !important;
 }
 
 ::-webkit-scrollbar-thumb {
@@ -55,3 +91,41 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.15);
 }
+
+@keyframes bloom-drift-1 {
+  0%   { transform: translate(0, 0) scale(1); }
+  33%  { transform: translate(4vw, 3vh) scale(1.05); }
+  66%  { transform: translate(-2vw, 5vh) scale(0.97); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+@keyframes bloom-drift-2 {
+  0%   { transform: translate(0, 0) scale(1); }
+  25%  { transform: translate(-5vw, 2vh) scale(1.03); }
+  50%  { transform: translate(-3vw, -4vh) scale(1.06); }
+  75%  { transform: translate(2vw, -2vh) scale(0.98); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+@keyframes bloom-drift-3 {
+  0%   { transform: translate(0, 0) scale(1); }
+  30%  { transform: translate(2vw, -5vh) scale(0.95); }
+  60%  { transform: translate(4vw, -2vh) scale(1.04); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+@keyframes bloom-drift-4 {
+  0%   { transform: translate(0, 0) scale(1); }
+  40%  { transform: translate(-3vw, -3vh) scale(1.05); }
+  70%  { transform: translate(-5vw, 1vh) scale(0.95); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+@keyframes bloom-drift-5 {
+  0%   { transform: translate(0, 0) scale(1); }
+  33%  { transform: translate(3vw, 4vh) scale(1.02); }
+  66%  { transform: translate(1vw, 6vh) scale(0.98); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+
+.animate-bloom-drift-1 { animation: bloom-drift-1 15s infinite ease-in-out alternate; }
+.animate-bloom-drift-2 { animation: bloom-drift-2 18s infinite ease-in-out alternate; }
+.animate-bloom-drift-3 { animation: bloom-drift-3 14s infinite ease-in-out alternate; }
+.animate-bloom-drift-4 { animation: bloom-drift-4 20s infinite ease-in-out alternate; }
+.animate-bloom-drift-5 { animation: bloom-drift-5 17s infinite ease-in-out alternate; }

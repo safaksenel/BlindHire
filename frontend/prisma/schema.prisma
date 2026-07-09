@@ -23,11 +23,30 @@ model User {
   email        String        @unique
   passwordHash String
   fullName     String
+  avatarUrl    String?
+
+  // Profil Alanları
+  tcKimlikNo        String?
+  phone             String?
+  address           String?
+  dateOfBirth       DateTime?
+  isProfileComplete Boolean       @default(false)
+
   // Enum values stored as String: "SUPER_ADMIN", "HR", "CANDIDATE"
   role         String        @default("CANDIDATE")
   companyId    String?
   company      Company?      @relation("CompanyUsers", fields: [companyId], references: [id], onDelete: SetNull)
+  
   applications Application[] @relation("CandidateApplications")
+
+  // Yeni Profil İlişkileri
+  educations            Education[]            @relation("UserEducations")
+  internshipPreferences InternshipPreferences? @relation("UserPreferences")
+  skills                Skills?                @relation("UserSkills")
+  experiences           Experience[]           @relation("UserExperiences")
+  documents             Documents?             @relation("UserDocuments")
+  references            Reference[]            @relation("UserReferences")
+
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 }
@@ -40,6 +59,8 @@ model JobPosting {
   company      Company       @relation("CompanyJobs", fields: [companyId], references: [id], onDelete: Cascade)
   applications Application[] @relation("JobApplications")
   status       String        @default("ACTIVE")
+  startDate    DateTime?
+  endDate      DateTime?
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 }
@@ -54,6 +75,8 @@ model Application {
   status       String     @default("PENDING")
   techScore    Int?
   reliability  Int?
+  interviewId  String?
+  interviewPassword String?
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 }
@@ -67,4 +90,84 @@ model HRSettings {
   autoRejectThreshold   Int      @default(59)
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
+}
+
+model Education {
+  id             String    @id @default(uuid())
+  userId         String
+  user           User      @relation("UserEducations", fields: [userId], references: [id], onDelete: Cascade)
+  university     String
+  faculty        String
+  degree         String
+  year           String
+  gpa            String
+  startDate      DateTime
+  endDate        DateTime?
+  isHighSchool   Boolean   @default(false)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+model InternshipPreferences {
+  id             String    @id @default(uuid())
+  userId         String    @unique
+  user           User      @relation("UserPreferences", fields: [userId], references: [id], onDelete: Cascade)
+  type           String
+  duration       Int
+  insurance      String
+  workModel      String
+  availability   String
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+model Skills {
+  id               String    @id @default(uuid())
+  userId           String    @unique
+  user             User      @relation("UserSkills", fields: [userId], references: [id], onDelete: Cascade)
+  foreignLanguages String
+  technicalSkills  String
+  softSkills       String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+}
+
+model Experience {
+  id             String    @id @default(uuid())
+  userId         String
+  user           User      @relation("UserExperiences", fields: [userId], references: [id], onDelete: Cascade)
+  type           String
+  title          String
+  organization   String
+  description    String?
+  startDate      DateTime?
+  endDate        DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+model Documents {
+  id             String    @id @default(uuid())
+  userId         String    @unique
+  user           User      @relation("UserDocuments", fields: [userId], references: [id], onDelete: Cascade)
+  cvUrl          String
+  transcriptUrl  String?
+  linkedInUrl    String?
+  githubUrl      String?
+  portfolioUrl   String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+model Reference {
+  id               String    @id @default(uuid())
+  userId           String
+  user             User      @relation("UserReferences", fields: [userId], references: [id], onDelete: Cascade)
+  name             String
+  title            String
+  institution      String
+  contact          String
+  motivationLetter String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 }

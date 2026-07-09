@@ -57,7 +57,7 @@ export default function HRSettingsPage(): React.JSX.Element {
   if (isLoading) {
     return (
       <div className="flex h-full min-h-[400px] flex-col items-center justify-center space-y-4">
-        <Loader2 className="h-8 w-8 animate-spin text-emerald-500" />
+        <Loader2 className="h-8 w-8 animate-spin text-theme-1" />
         <p className="text-sm text-white/50">Ayarlar yükleniyor...</p>
       </div>
     );
@@ -67,7 +67,7 @@ export default function HRSettingsPage(): React.JSX.Element {
     <div className="space-y-8 max-w-4xl">
       <div>
         <h1 className="text-xl font-bold text-white flex items-center gap-2">
-          <Settings className="w-6 h-6 text-emerald-400" />
+          <Settings className="w-6 h-6 text-theme-1" />
           Otomasyon Ayarları
         </h1>
         <p className="mt-1 text-sm text-white/40">
@@ -83,7 +83,7 @@ export default function HRSettingsPage(): React.JSX.Element {
       )}
 
       {message && (
-        <div className="flex items-center gap-3 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm text-emerald-400">
+        <div className="flex items-center gap-3 rounded-xl border border-theme-1/20 bg-theme-1/10 p-4 text-sm text-theme-1">
           <ShieldCheck className="h-5 w-5" />
           <p>{message}</p>
         </div>
@@ -96,15 +96,15 @@ export default function HRSettingsPage(): React.JSX.Element {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
-                  <UserPlus className="w-5 h-5 text-emerald-400" />
+                <div className="w-10 h-10 rounded-xl bg-theme-1/10 border border-theme-1/20 flex items-center justify-center">
+                  <UserPlus className="w-5 h-5 text-theme-1" />
                 </div>
                 <div>
                   <h3 className="font-semibold text-white">Otomatik Mülakat Daveti</h3>
                   <p className="text-xs text-white/40 mt-0.5">CV puanı bu değerin üzerinde olanlar otomatik davet edilir.</p>
                 </div>
               </div>
-              <span className="text-2xl font-bold text-emerald-400">{autoInvite}</span>
+              <span className="text-2xl font-bold text-theme-1">{autoInvite}</span>
             </div>
             <input
               type="range"
@@ -115,7 +115,7 @@ export default function HRSettingsPage(): React.JSX.Element {
                 const val = Number(e.target.value);
                 setAutoInvite(val <= manualReview ? manualReview + 1 : val);
               }}
-              className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+              className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-theme-1"
             />
             <div className="flex justify-between text-xs text-white/30 font-mono">
               <span>1</span>
@@ -176,7 +176,7 @@ export default function HRSettingsPage(): React.JSX.Element {
           <button
             onClick={handleSave}
             disabled={isSaving}
-            className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-zinc-950 px-6 py-2.5 rounded-xl font-semibold text-sm transition-all disabled:opacity-50"
+            className="flex items-center gap-2 bg-theme-1 hover:bg-theme-1 text-black px-6 py-2.5 rounded-xl font-semibold text-sm transition-all disabled:opacity-50"
           >
             {isSaving ? (
               <Loader2 className="w-4 h-4 animate-spin" />

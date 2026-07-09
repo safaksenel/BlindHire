@@ -18,7 +18,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
 
     const matchedUser = await prisma.user.findUnique({
-      where: { email: email.trim().toLowerCase() }
+      where: { email: email.trim().toLowerCase() },
+      include: { company: true }
     });
 
     if (!matchedUser || matchedUser.passwordHash !== password) {
@@ -31,6 +32,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       fullName: matchedUser.fullName,
       email: matchedUser.email,
       role: matchedUser.role,
+      companyName: matchedUser.company?.name || null,
     });
   } catch (error) {
     console.error(error);

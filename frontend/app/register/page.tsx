@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { z } from "zod";
+import { AppLogo } from "@/components/AppLogo";
+import { useToast } from "@/components/ToastContext";
 import {
   UserPlus,
   User,
@@ -14,7 +16,6 @@ import {
   EyeOff,
   ArrowRight,
   Loader2,
-  AlertTriangle,
 } from "lucide-react";
 
 const registerSchema = z
@@ -25,7 +26,9 @@ const registerSchema = z
       .string()
       .min(8, "Şifre en az 8 karakter olmalıdır.")
       .regex(/[A-Z]/, "Şifre en az 1 büyük harf içermelidir.")
-      .regex(/[0-9]/, "Şifre en az 1 rakam içermelidir."),
+      .regex(/[a-z]/, "Şifre en az 1 küçük harf içermelidir.")
+      .regex(/[0-9]/, "Şifre en az 1 rakam içermelidir.")
+      .regex(/[!@#$%^&*(),.?":{}|<>]/, "Şifre en az 1 özel karakter içermelidir."),
     confirmPassword: z.string().min(1, "Şifre tekrarı zorunludur."),
   })
   .refine((data) => data.password === data.confirmPassword, {
@@ -42,6 +45,7 @@ interface FieldErrors {
 
 export default function RegisterPage(): React.JSX.Element {
   const router = useRouter();
+  const { addToast } = useToast();
 
   const [fullName, setFullName] = useState<string>("");
   const [email, setEmail] = useState<string>("");
@@ -49,13 +53,14 @@ export default function RegisterPage(): React.JSX.Element {
   const [confirmPassword, setConfirmPassword] = useState<string>("");
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
-  const [globalError, setGlobalError] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  const isPasswordValid = password.length >= 8 && /[A-Z]/.test(password) && /[a-z]/.test(password) && /[0-9]/.test(password) && /[!@#$%^&*(),.?":{}|<>]/.test(password);
+  const isFormValid = fullName.length >= 3 && email.length > 5 && isPasswordValid && password === confirmPassword;
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setFieldErrors({});
-    setGlobalError("");
     setIsLoading(true);
 
     const result = registerSchema.safeParse({
@@ -95,19 +100,18 @@ export default function RegisterPage(): React.JSX.Element {
         }
       }
 
+      addToast(`Kayıt işlemi tamamlandı. Aramıza hoş geldiniz, ${fullName}!`, "success");
       router.push("/login?registered=true");
     } catch (err) {
-      setGlobalError(err instanceof Error ? err.message : "Bir hata oluştu. Lütfen tekrar deneyin.");
+      addToast(err instanceof Error ? err.message : "Bir hata oluştu. Lütfen tekrar deneyin.", "error");
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center bg-zinc-950 overflow-hidden px-4">
+    <div className="relative flex-1 w-full flex items-center justify-center overflow-hidden px-4">
       {/* Background Effects */}
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[550px] h-[550px] bg-violet-500/[0.07] rounded-full blur-[120px]" />
-        <div className="absolute bottom-1/4 right-1/3 w-[400px] h-[400px] bg-cyan-500/[0.05] rounded-full blur-[100px]" />
         <div
           className="absolute inset-0 opacity-[0.03]"
           style={{
@@ -132,9 +136,7 @@ export default function RegisterPage(): React.JSX.Element {
             transition={{ delay: 0.15, duration: 0.5 }}
             className="flex flex-col items-center gap-4 mb-8"
           >
-            <div className="flex items-center justify-center w-14 h-14 rounded-xl bg-violet-500/10 border border-violet-500/20">
-              <UserPlus className="w-7 h-7 text-violet-400" />
-            </div>
+            <AppLogo className="w-16 h-16 drop-shadow-[0_0_15px_var(--theme-c1)] mb-2 ml-1.5" />
             <div className="text-center">
               <h1 className="text-2xl font-bold text-white tracking-tight">
                 Aday Kaydı
@@ -144,18 +146,6 @@ export default function RegisterPage(): React.JSX.Element {
               </p>
             </div>
           </motion.div>
-
-          {/* Global Error */}
-          {globalError && (
-            <motion.div
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="flex items-center gap-2.5 p-3 mb-6 rounded-xl bg-red-500/[0.08] border border-red-500/20"
-            >
-              <AlertTriangle className="w-4 h-4 text-red-400 shrink-0" />
-              <span className="text-sm text-red-300">{globalError}</span>
-            </motion.div>
-          )}
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-5">
@@ -172,7 +162,9 @@ export default function RegisterPage(): React.JSX.Element {
                   onChange={(e) => setFullName(e.target.value)}
                   placeholder="Adınız Soyadınız"
                   required
-                  className="w-full pl-11 pr-4 py-3 rounded-xl bg-white/[0.015] border border-white/[0.06] text-white placeholder:text-zinc-600 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500/30 transition-all"
+                  className={`w-full pl-11 pr-4 py-3 rounded-xl bg-white/[0.015] border text-white placeholder:text-zinc-600 text-sm focus:outline-none focus:ring-2 transition-all ${
+                    fieldErrors.fullName ? "border-red-500/50 focus:ring-red-500/30 focus:border-red-500/50" : "border-white/[0.06] focus:ring-theme-1/30 focus:border-theme-1/30"
+                  }`}
                 />
               </div>
               {fieldErrors.fullName && (
@@ -195,7 +187,9 @@ export default function RegisterPage(): React.JSX.Element {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="ornek@email.com"
                   required
-                  className="w-full pl-11 pr-4 py-3 rounded-xl bg-white/[0.015] border border-white/[0.06] text-white placeholder:text-zinc-600 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500/30 transition-all"
+                  className={`w-full pl-11 pr-4 py-3 rounded-xl bg-white/[0.015] border text-white placeholder:text-zinc-600 text-sm focus:outline-none focus:ring-2 transition-all ${
+                    fieldErrors.email ? "border-red-500/50 focus:ring-red-500/30 focus:border-red-500/50" : "border-white/[0.06] focus:ring-theme-1/30 focus:border-theme-1/30"
+                  }`}
                 />
               </div>
               {fieldErrors.email && (
@@ -218,7 +212,9 @@ export default function RegisterPage(): React.JSX.Element {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   required
-                  className="w-full pl-11 pr-11 py-3 rounded-xl bg-white/[0.015] border border-white/[0.06] text-white placeholder:text-zinc-600 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500/30 transition-all"
+                  className={`w-full pl-11 pr-11 py-3 rounded-xl bg-white/[0.015] border text-white placeholder:text-zinc-600 text-sm focus:outline-none focus:ring-2 transition-all ${
+                    fieldErrors.password ? "border-red-500/50 focus:ring-red-500/30 focus:border-red-500/50" : "border-white/[0.06] focus:ring-theme-1/30 focus:border-theme-1/30"
+                  }`}
                 />
                 <button
                   type="button"
@@ -241,7 +237,7 @@ export default function RegisterPage(): React.JSX.Element {
                 <span
                   className={`text-[11px] px-2 py-0.5 rounded-md border ${
                     password.length >= 8
-                      ? "border-emerald-500/30 text-emerald-400 bg-emerald-500/[0.08]"
+                      ? "border-theme-1/30 text-theme-1 bg-theme-1/[0.08]"
                       : "border-white/[0.06] text-zinc-600 bg-white/[0.015]"
                   }`}
                 >
@@ -250,7 +246,7 @@ export default function RegisterPage(): React.JSX.Element {
                 <span
                   className={`text-[11px] px-2 py-0.5 rounded-md border ${
                     /[A-Z]/.test(password)
-                      ? "border-emerald-500/30 text-emerald-400 bg-emerald-500/[0.08]"
+                      ? "border-theme-1/30 text-theme-1 bg-theme-1/[0.08]"
                       : "border-white/[0.06] text-zinc-600 bg-white/[0.015]"
                   }`}
                 >
@@ -259,11 +255,29 @@ export default function RegisterPage(): React.JSX.Element {
                 <span
                   className={`text-[11px] px-2 py-0.5 rounded-md border ${
                     /[0-9]/.test(password)
-                      ? "border-emerald-500/30 text-emerald-400 bg-emerald-500/[0.08]"
+                      ? "border-theme-1/30 text-theme-1 bg-theme-1/[0.08]"
                       : "border-white/[0.06] text-zinc-600 bg-white/[0.015]"
                   }`}
                 >
                   1 rakam
+                </span>
+                <span
+                  className={`text-[11px] px-2 py-0.5 rounded-md border ${
+                    /[a-z]/.test(password)
+                      ? "border-theme-1/30 text-theme-1 bg-theme-1/[0.08]"
+                      : "border-white/[0.06] text-zinc-600 bg-white/[0.015]"
+                  }`}
+                >
+                  1 küçük harf
+                </span>
+                <span
+                  className={`text-[11px] px-2 py-0.5 rounded-md border ${
+                    /[!@#$%^&*(),.?":{}|<>]/.test(password)
+                      ? "border-theme-1/30 text-theme-1 bg-theme-1/[0.08]"
+                      : "border-white/[0.06] text-zinc-600 bg-white/[0.015]"
+                  }`}
+                >
+                  1 özel karakter
                 </span>
               </div>
             </div>
@@ -281,7 +295,9 @@ export default function RegisterPage(): React.JSX.Element {
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="••••••••"
                   required
-                  className="w-full pl-11 pr-4 py-3 rounded-xl bg-white/[0.015] border border-white/[0.06] text-white placeholder:text-zinc-600 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500/30 transition-all"
+                  className={`w-full pl-11 pr-4 py-3 rounded-xl bg-white/[0.015] border text-white placeholder:text-zinc-600 text-sm focus:outline-none focus:ring-2 transition-all ${
+                    fieldErrors.confirmPassword || (confirmPassword && password !== confirmPassword) ? "border-red-500/50 focus:ring-red-500/30 focus:border-red-500/50" : "border-white/[0.06] focus:ring-theme-1/30 focus:border-theme-1/30"
+                  }`}
                 />
               </div>
               {fieldErrors.confirmPassword && (
@@ -298,8 +314,8 @@ export default function RegisterPage(): React.JSX.Element {
             >
               <button
                 type="submit"
-                disabled={isLoading}
-                className="w-full flex items-center justify-center gap-2.5 py-3 px-4 rounded-xl bg-violet-500 hover:bg-violet-400 text-white font-semibold text-sm transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-violet-500/20"
+                disabled={isLoading || !isFormValid}
+                className="w-full flex items-center justify-center gap-2.5 py-3 px-4 rounded-xl bg-gradient-to-r from-theme-1 to-theme-2 hover:from-theme-1 hover:to-theme-2 text-black font-semibold text-sm transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-theme-1/20"
               >
                 {isLoading ? (
                   <>
@@ -327,7 +343,7 @@ export default function RegisterPage(): React.JSX.Element {
               Zaten hesabınız var mı?{" "}
               <Link
                 href="/login"
-                className="text-violet-400 hover:text-violet-300 font-medium transition-colors"
+                className="text-theme-1 hover:text-theme-1 font-medium transition-colors"
               >
                 Giriş Yapın
               </Link>
