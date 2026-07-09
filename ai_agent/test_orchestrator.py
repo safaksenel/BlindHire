@@ -27,6 +27,13 @@ def simulate_interview():
 
     for i, response in enumerate(candidate_responses):
         print(f"\n[AŞAMA]: {orchestrator.current_state.value}")
+        
+        # Eğer bu aşama için bir soru seçilmişse (process_input öncesinde veya sonrasında) debug bilgisini yazdır
+        # current_state process_input çağrısı sonrasında bir sonraki duruma geçeceği için, process_input öncesinde kontrol ediyoruz.
+        if orchestrator.current_state in orchestrator.selected_questions:
+            q_info = orchestrator.selected_questions[orchestrator.current_state]
+            print(f"[DEBUG - RAG]: Secilen Soru: {q_info['id']} ({q_info['category']})")
+
         if response:
             print(f"Aday: {response}")
         else:
