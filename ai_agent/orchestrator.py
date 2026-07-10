@@ -2,14 +2,29 @@ import os
 import json
 import random
 from enum import Enum
-from typing import List, Dict, Any, Optional, AsyncGenerator
+from typing import List, Dict, Any, Optional, AsyncGenerator, Literal
 from dotenv import load_dotenv
+from pydantic import BaseModel, Field
 from langchain_groq import ChatGroq
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage, BaseMessage
 from retriever import QuestionRetriever
 
 # .env dosyasındaki API anahtarını yükle
 load_dotenv()
+
+class CandidateScorecard(BaseModel):
+    """
+    Adayın mülakat performansını değerlendiren tip güvenli skor kartı modeli.
+    """
+    candidate_id: str = Field(description="Adayın anonim kimliği (örn: anonymous_candidate_sprint1)")
+    technical_score: int = Field(description="1 ile 10 arasında teknik yetkinlik puanı", ge=1, le=10)
+    strengths: List[str] = Field(description="Mülakat boyunca tespit edilen güçlü teknik yönler")
+    weaknesses: List[str] = Field(description="Mülakat boyunca eksik veya geliştirilmesi gereken teknik yönler")
+    overall_evaluation: str = Field(description="Adayın performansını özetleyen detaylı teknik değerlendirme paragrafı")
+    recommended_next_step: Literal["PROCEED_TO_TEAM_INTERVIEW", "HOLD", "REJECT"] = Field(
+        description="Aday için önerilen sıradaki adım. Sadece belirtilen üç değerden biri olmalıdır."
+    )
+
 
 class InterviewState(Enum):
     WELCOME = "WELCOME"            # Karşılama ve Kurallar
@@ -415,23 +430,12 @@ class InterviewOrchestrator:
         eval_model = ChatGroq(
             model="llama-3.1-8b-instant",
             temperature=0.2,
-            groq_api_key=api_key,
-            model_kwargs={"response_format": {"type": "json_object"}}
-        )
+            groq_api_key=api_key
+        ).with_structured_output(CandidateScorecard)
 
-        content = ""
         try:
-            response = eval_model.invoke(messages)
-            content = response.content.strip()
-            print(f"\n[DEBUG] Raw Scorecard Response: {repr(content)}")
-            
-            # JSON'u diğer metinlerden ayıklamak için en dıştaki süslü parantezleri bul
-            start = content.find("{")
-            end = content.rfind("}")
-            if start != -1 and end != -1 and start < end:
-                content = content[start:end+1]
-                
-            scorecard = json.loads(content)
+            scorecard_obj = eval_model.invoke(messages)
+            scorecard = scorecard_obj.model_dump()
             return scorecard
         except Exception as e:
             # Hata durumunda detayı konsola yazdır
@@ -440,7 +444,7 @@ class InterviewOrchestrator:
                 "candidate_id": "anonymous_candidate_sprint1",
                 "technical_score": 0,
                 "strengths": ["Değerlendirme sırasında hata oluştu."],
-                "weaknesses": [str(e), f"Ham LLM Çıktısı: {content[:100]}..."],
+                "weaknesses": [str(e)],
                 "overall_evaluation": "Adayın skor kartı üretilirken teknik bir hata meydana geldi.",
                 "recommended_next_step": "HOLD"
             }
@@ -511,23 +515,12 @@ class InterviewOrchestrator:
         eval_model = ChatGroq(
             model="llama-3.1-8b-instant",
             temperature=0.2,
-            groq_api_key=api_key,
-            model_kwargs={"response_format": {"type": "json_object"}}
-        )
+            groq_api_key=api_key
+        ).with_structured_output(CandidateScorecard)
 
-        content = ""
         try:
-            response = await eval_model.ainvoke(messages)
-            content = response.content.strip()
-            print(f"\n[DEBUG] Raw Scorecard Response (Async): {repr(content)}")
-            
-            # JSON'u diğer metinlerden ayıklamak için en dıştaki süslü parantezleri bul
-            start = content.find("{")
-            end = content.rfind("}")
-            if start != -1 and end != -1 and start < end:
-                content = content[start:end+1]
-                
-            scorecard = json.loads(content)
+            scorecard_obj = await eval_model.ainvoke(messages)
+            scorecard = scorecard_obj.model_dump()
             return scorecard
         except Exception as e:
             # Hata durumunda detayı konsola yazdır
@@ -536,7 +529,7 @@ class InterviewOrchestrator:
                 "candidate_id": "anonymous_candidate_sprint1",
                 "technical_score": 0,
                 "strengths": ["Değerlendirme sırasında hata oluştu."],
-                "weaknesses": [str(e), f"Ham LLM Çıktısı: {content[:100]}..."],
+                "weaknesses": [str(e)],
                 "overall_evaluation": "Adayın skor kartı üretilirken teknik bir hata meydana geldi.",
                 "recommended_next_step": "HOLD"
             }
