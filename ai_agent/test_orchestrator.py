@@ -1,10 +1,11 @@
 import time
 import json
+import asyncio
 from orchestrator import InterviewOrchestrator, InterviewState
 
-def simulate_interview():
+async def simulate_interview():
     print("=" * 60)
-    print("BLINDHIRE OTONOM MÜLAKAT AJANI SIMÜLASYONU BAŞLIYOR (RAG + INTERRUPT)")
+    print("BLINDHIRE OTONOM MÜLAKAT AJANI SIMÜLASYONU BAŞLIYOR (ASENKRON STREAM + RAG)")
     print("=" * 60)
 
     try:
@@ -57,18 +58,28 @@ def simulate_interview():
         
         # Süreyi ölç
         start_time = time.time()
-        ai_reply = orchestrator.process_input(
+        
+        print("BlindHire: ", end="", flush=True)
+        # Asenkron response stream çağrısı
+        first_token = True
+        async for token in orchestrator.process_input_stream(
             user_text=response,
             interrupted=interrupted,
             unfinished_ai_text=unfinished
-        )
-        duration = time.time() - start_time
+        ):
+            if first_token:
+                first_token_time = time.time() - start_time
+                # İlk token'ın gelme süresini (TTFT) ekrana basıyoruz
+                print(f"[{first_token_time:.2f}sn] ", end="", flush=True)
+                first_token = False
+            print(token, end="", flush=True)
         
-        print(f"BlindHire ({duration:.2f}sn): {ai_reply}")
+        duration = time.time() - start_time
+        print(f"\n[TOPLAM SÜRE: {duration:.2f}sn]")
         print("-" * 50)
         
         # Rate limit engellemek için kısa bir gecikme ekle
-        time.sleep(2.0)
+        await asyncio.sleep(2.0)
 
     print("\n[DEBUG] Mülakat Geçmişi Mesajları:")
     for idx, msg in enumerate(orchestrator.chat_history):
@@ -77,9 +88,9 @@ def simulate_interview():
     print("\n[AŞAMA]: Değerlendirme & Skor Kartı Üretimi")
     # Groq'un ücretsiz katmanındaki 6000 TPM limitinin sıfırlanması için 16 saniye bekliyoruz
     print("Groq API rate limit (TPM) penceresinin sıfırlanması için 16 saniye bekleniyor...")
-    time.sleep(16.0)
+    await asyncio.sleep(16.0)
     start_time = time.time()
-    scorecard = orchestrator.generate_scorecard()
+    scorecard = await orchestrator.generate_scorecard_async()
     duration = time.time() - start_time
     print(f"Değerlendirme Süresi: {duration:.2f}sn")
     
@@ -88,4 +99,4 @@ def simulate_interview():
     print("=" * 60)
 
 if __name__ == "__main__":
-    simulate_interview()
+    asyncio.run(simulate_interview())

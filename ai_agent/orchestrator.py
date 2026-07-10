@@ -2,7 +2,7 @@ import os
 import json
 import random
 from enum import Enum
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, AsyncGenerator
 from dotenv import load_dotenv
 from langchain_groq import ChatGroq
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage, BaseMessage
@@ -249,6 +249,107 @@ class InterviewOrchestrator:
             self.chat_history.pop()
             return f"Yanıt üretilirken bir hata oluştu: {e}. Lütfen tekrar deneyin."
 
+    async def process_input_stream(
+        self,
+        user_text: str,
+        interrupted: bool = False,
+        unfinished_ai_text: str = ""
+    ) -> AsyncGenerator[str, None]:
+        """
+        Adaydan gelen metin girdisini asenkron olarak işler, mülakat durumunu yönetir
+        ve model yanıtını token token (stream) olarak döner.
+        
+        Args:
+            user_text: Adayın yazdığı metin girdisi. (Mülakatı başlatmak için boş bırakılabilir veya '/start' girilebilir)
+            interrupted: Adayın ajanın sözünü kesip kesmediği bilgisi.
+            unfinished_ai_text: Söz kesildiğinde ajanın söyleyebildiği yarım kalan metin.
+        Returns:
+            AsyncGenerator[str, None]: Yanıt parçaları (tokens).
+        """
+        user_text = user_text.strip()
+
+        # 1. Eğer mülakat zaten tamamlanmışsa doğrudan bitiş mesajını dön
+        if self.current_state == InterviewState.COMPLETED:
+            yield "Mülakat tamamlanmıştır. Katılımınız için tekrar teşekkür ederiz."
+            return
+
+        # 2. İlk başlatma kontrolü
+        if not self.chat_history and (not user_text or user_text.lower() in ["/start", "start"]):
+            system_prompt = self._get_system_prompt()
+            try:
+                full_response = ""
+                async for chunk in self.model.astream([system_prompt]):
+                    token = chunk.content
+                    full_response += token
+                    yield token
+                
+                cleaned_response = self._clean_response_for_tts(full_response)
+                self.chat_history.append(AIMessage(content=cleaned_response))
+                return
+            except Exception as e:
+                yield f"Mülakat sistemi başlatılırken bir hata oluştu: {e}"
+                return
+
+        # Sohbet geçmişi yokken uygun başlatma komutu verilmemişse
+        if not self.chat_history:
+            yield "Mülakatı başlatmak için lütfen '/start' yazın veya boş bir mesaj gönderin."
+            return
+
+        # Adayın boş mesaj göndermesini engelle
+        if not user_text:
+            yield "Lütfen sesinizi veya metin cevabınızı mülakat sistemine iletin."
+            return
+
+        # Adayın deneyim geçmişi aşamasındaysak metni semantik arama sorgusu için sakla
+        if self.current_state == InterviewState.BACKGROUND:
+            self.candidate_background_text = user_text
+
+        # 3. Söz Kesme (Interrupt) Yönetimi
+        if interrupted:
+            # Hafızadaki en son mesajı bul ve yarım kalan metinle güncelle
+            if self.chat_history and isinstance(self.chat_history[-1], AIMessage):
+                if unfinished_ai_text:
+                    self.chat_history[-1].content = self._clean_response_for_tts(unfinished_ai_text)
+            
+            # Adayın söz kestiğini belirtecek şekilde girdiyi formatlayarak ekle
+            formatted_user_text = f"[Aday söz keserek araya girdi]: {user_text}"
+            self.chat_history.append(HumanMessage(content=formatted_user_text))
+            
+            # Söz kesme durumunda mülakat durum geçişini engelliyoruz (aynı state'de kalıyoruz)
+        else:
+            # Normal akış: Aday girdisini doğrudan ekle ve durumu ilerlet
+            self.chat_history.append(HumanMessage(content=user_text))
+            self._advance_state()
+
+        # 4. Güncel durum için sistem promptu ile LLM yanıtı oluştur
+        system_prompt = self._get_system_prompt()
+        messages = [system_prompt]
+
+        # Eğer söz kesilmişse, LLM'e durumu yönetmesi için geçici bir sistem talimatı ekle
+        if interrupted:
+            interrupt_instruction = SystemMessage(content=(
+                "ÖNEMLİ TALİMAT: Aday az önce senin sözünü keserek araya girdi. "
+                "Nazikçe bu durumu karşıla (örneğin doğrudan adayın sorusunu yanıtlayabilir veya 'Tabii ki, açıklayayım' diyerek konuyu toparlayabilirsin). "
+                "Adayın araya girerek sorduğu soruyu veya itirazını yanıtla, ardından aynı mülakat aşamasına ait sorunu/senaryonu tamamla veya tekrar et."
+            ))
+            messages.append(interrupt_instruction)
+
+        messages.extend(self.chat_history)
+
+        try:
+            full_response = ""
+            async for chunk in self.model.astream(messages):
+                token = chunk.content
+                full_response += token
+                yield token
+            
+            cleaned_response = self._clean_response_for_tts(full_response)
+            self.chat_history.append(AIMessage(content=cleaned_response))
+        except Exception as e:
+            # Hata durumunda girilen son mesajı geçmişten çıkar ve hata mesajı dön
+            self.chat_history.pop()
+            yield f"Yanıt üretilirken bir hata oluştu: {e}. Lütfen tekrar deneyin."
+
     def generate_scorecard(self) -> Dict[str, Any]:
         """
         Mülakat geçmişini inceleyerek aday için tamamen anonim, JSON formatında bir skor kartı üretir.
@@ -323,6 +424,102 @@ class InterviewOrchestrator:
             response = eval_model.invoke(messages)
             content = response.content.strip()
             print(f"\n[DEBUG] Raw Scorecard Response: {repr(content)}")
+            
+            # JSON'u diğer metinlerden ayıklamak için en dıştaki süslü parantezleri bul
+            start = content.find("{")
+            end = content.rfind("}")
+            if start != -1 and end != -1 and start < end:
+                content = content[start:end+1]
+                
+            scorecard = json.loads(content)
+            return scorecard
+        except Exception as e:
+            # Hata durumunda detayı konsola yazdır
+            print(f"[DEBUG] Scorecard Error: {e}")
+            return {
+                "candidate_id": "anonymous_candidate_sprint1",
+                "technical_score": 0,
+                "strengths": ["Değerlendirme sırasında hata oluştu."],
+                "weaknesses": [str(e), f"Ham LLM Çıktısı: {content[:100]}..."],
+                "overall_evaluation": "Adayın skor kartı üretilirken teknik bir hata meydana geldi.",
+                "recommended_next_step": "HOLD"
+            }
+
+    async def generate_scorecard_async(self) -> Dict[str, Any]:
+        """
+        Mülakat geçmişini inceleyerek aday için tamamen anonim, JSON formatında bir skor kartı üretir.
+        Asenkron çalışır.
+        
+        Returns:
+            dict: Skor kartı verileri.
+        """
+        # Değerlendirme yapabilmek için mülakatın en azından başlamış olması gerekir
+        if len(self.chat_history) < 4:
+            return {
+                "error": "Değerlendirme yapmak için yeterli mülakat geçmişi bulunmuyor."
+            }
+
+        # Mülakat geçmişini temiz bir transkript metnine dönüştür
+        transcript_lines = []
+        last_question = ""
+        for msg in self.chat_history:
+            if isinstance(msg, AIMessage):
+                last_question = msg.content
+            elif isinstance(msg, HumanMessage):
+                transcript_lines.append(f"Görüşmeci (AI): {last_question}\nAday: {msg.content}\n")
+        
+        transcript_text = "\n".join(transcript_lines)
+
+        # Mülakat sırasında sorulan dinamik soruları ve değerlendirme kriterlerini context olarak ekle
+        sorular_context = ""
+        if self.selected_questions:
+            sorular_context = "Adaya sorulan teknik sorular ve değerlendirme rehberleri:\n"
+            for state, q in self.selected_questions.items():
+                sorular_context += (
+                    f"Aşama: {state.value}\n"
+                    f"Soru: {q['question']}\n"
+                    f"Beklenen Cevap: {q['expected_answer']}\n"
+                    f"Değerlendirme Kriterleri: {', '.join(q['evaluation_criteria'])}\n\n"
+                )
+
+        evaluation_system_prompt = SystemMessage(content=(
+            "Sen kıdemli bir yazılım mimarı ve teknik mülakat değerlendiricisisin.\n"
+            "Görevin, sana sunulan mülakat transkriptini inceleyerek adayın teknik becerilerini değerlendirmektir.\n"
+            "Adayın ismini, cinsiyetini veya kişisel tanımlayıcı bilgilerini asla rapora dahil etme. "
+            "Adayı her zaman 'Anonymous Candidate' veya 'Aday' olarak adlandır.\n\n"
+            f"{sorular_context}"
+            "Değerlendirmeyi MUTLAKA aşağıdaki JSON formatında çıktı olarak ver:\n"
+            "{\n"
+            "  \"candidate_id\": \"anonymous_candidate_sprint1\",\n"
+            "  \"technical_score\": <1 ile 10 arasında bir tamsayı değer>,\n"
+            "  \"strengths\": [<güçlü görülen teknik yönler (string listesi)>],\n"
+            "  \"weaknesses\": [<geliştirilmesi gereken veya eksik kalınan teknik yönler (string listesi)>],\n"
+            "  \"overall_evaluation\": \"<adayı genel olarak özetleyen detaylı teknik değerlendirme paragrafı>\",\n"
+            "  \"recommended_next_step\": \"<PROCEED_TO_TEAM_INTERVIEW, HOLD veya REJECT değerlerinden biri>\"\n"
+            "}\n"
+            "NOT: Çıktı sadece ve sadece yukarıda belirtilen JSON şemasına sahip geçerli bir JSON dizesi olmalıdır. "
+            "Markdown kod blokları veya ekstra açıklama yazıları ekleme."
+        ))
+
+        messages = [
+            evaluation_system_prompt,
+            HumanMessage(content=f"Değerlendirilecek mülakat transkripti:\n\n{transcript_text}")
+        ]
+
+        # Değerlendirmenin daha kararlı ve izole çalışması için yeni bir model nesnesi oluşturuyoruz
+        api_key = os.getenv("GROQ_API_KEY")
+        eval_model = ChatGroq(
+            model="llama-3.1-8b-instant",
+            temperature=0.2,
+            groq_api_key=api_key,
+            model_kwargs={"response_format": {"type": "json_object"}}
+        )
+
+        content = ""
+        try:
+            response = await eval_model.ainvoke(messages)
+            content = response.content.strip()
+            print(f"\n[DEBUG] Raw Scorecard Response (Async): {repr(content)}")
             
             # JSON'u diğer metinlerden ayıklamak için en dıştaki süslü parantezleri bul
             start = content.find("{")
