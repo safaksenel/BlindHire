@@ -15,11 +15,13 @@ async def simulate_interview():
         print(f"Orkestratör başlatılırken hata oluştu: {e}")
         return
 
-    # Aday cevaplarının ve söz kesme (interrupt) senaryosunun kurgulanması
+    # Aday cevaplarının, söz kesme (interrupt) ve uç durum (edge case) senaryolarının kurgulanması
     candidate_steps = [
         {"text": "", "interrupted": False, "unfinished": ""},  # Mülakatı başlatır
         {"text": "Merhaba, hazırım, başlayabiliriz.", "interrupted": False, "unfinished": ""},  # Karşılama onaylanır
-        {"text": "Yaklaşık 4 yıldır backend ve veri mühendisliği yapıyorum. Python, FastAPI, PostgreSQL ve LangChain ile yapay zeka entegrasyonları üzerinde çalıştım.", "interrupted": False, "unfinished": ""},
+        
+        # EDGE CASE 1: Aday konudan sapıp ajana soru soruyor (off-topic)
+        {"text": "Yaklaşık 4 yıldır backend mühendisliği yapıyorum. Bu arada sen bir yapay zeka olarak nasıl tasarlandın, arkada hangi LLM modellerini kullanıyorsun?", "interrupted": False, "unfinished": ""},
         
         # SÖZ KESME (INTERRUPT) SENARYOSU:
         # TECHNICAL_1 aşamasına geçildiğinde ajan soruyu sormaya başladığı an aday araya girer
@@ -29,8 +31,10 @@ async def simulate_interview():
         # Aday şimdi asıl teknik sorunun cevabını veriyor.
         {"text": "Tamam anladım. Python'daki decorator'lar, sarmaladıkları fonksiyonların kodunu değiştirmeden onlara yeni özellikler eklememizi sağlar. @ işareti ile kullanılırlar. wraps ise metadata korumaya yarar.", "interrupted": False, "unfinished": ""},
         
-        # Diğer aşamalar normal akışında devam eder
-        {"text": "Mikroservisler arası iletişimde genellikle REST API veya asenkron kuyruk sistemleri kullanırız. Veritabanı ölçeklemesi için okuma yükünü azaltmak amacıyla read replikalar ve Redis önbellekleme kullanırım.", "interrupted": False, "unfinished": ""},
+        # EDGE CASE 2: Aday TECHNICAL_2 sorusunu bilmediğini belirterek pas geçmek istiyor (pass)
+        {"text": "Maalesef bu konuyu (mikroservislerde senkron/asenkron iletişim ve Kafka) daha önce derinlemesine kullanmadım, pas geçebilir miyiz?", "interrupted": False, "unfinished": ""},
+        
+        # Normal akış senaryo aşamasıyla devam eder
         {"text": "Öncelikle cProfile ve memory_profiler gibi araçlarla kodun hangi kısmında bellek sızıntısı veya gecikme olduğunu tespit ederim. Sorgu optimizasyonu yapar ve gerekiyorsa verileri asenkron işlerim.", "interrupted": False, "unfinished": ""},
         {"text": "Hayır, bir sorum yok. Her şey çok netti. Teşekkürler.", "interrupted": False, "unfinished": ""}
     ]
