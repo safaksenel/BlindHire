@@ -2,16 +2,19 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { AlertTriangle, Wifi, Mic, Video, Volume2, CheckCircle2, Play, ShieldCheck } from "lucide-react";
+import { AlertTriangle, Wifi, Mic, Video, Volume2, CheckCircle2, Play, ShieldCheck, User, Activity } from "lucide-react";
+import * as faceapi from "@vladmandic/face-api";
 
 export interface PreflightChecks {
   internet: boolean;
   microphone: boolean;
   camera: boolean;
+  faceVisible: boolean;
   audio: boolean;
+  audioClarity: boolean;
 }
 
-const AUDIO_THRESHOLD = 15;
+const AUDIO_THRESHOLD = 40;
 
 export default function PreflightStage({
   onReady,
@@ -22,7 +25,9 @@ export default function PreflightStage({
     internet: false,
     microphone: false,
     camera: false,
+    faceVisible: false,
     audio: false,
+    audioClarity: false,
   });
   const [permissionGranted, setPermissionGranted] = useState<boolean>(false);
   const [audioLevel, setAudioLevel] = useState<number>(0);
@@ -33,7 +38,7 @@ export default function PreflightStage({
   const audioContextRef = useRef<AudioContext | null>(null);
   const animFrameRef = useRef<number>(0);
 
-  const allPassed = checks.internet && checks.microphone && checks.camera && checks.audio;
+  const allPassed = checks.internet && checks.microphone && checks.camera && checks.audio && checks.faceVisible && checks.audioClarity;
 
   // Mock internet check
   useEffect(() => {
@@ -43,21 +48,37 @@ export default function PreflightStage({
     return () => clearTimeout(timer);
   }, []);
 
+  const modelsLoadedRef = useRef(false);
+
+  useEffect(() => {
+    const loadModels = async () => {
+      try {
+        await faceapi.nets.tinyFaceDetector.loadFromUri('/models');
+        modelsLoadedRef.current = true;
+      } catch (err) {
+        console.error("Yüz tanıma modelleri yüklenemedi:", err);
+      }
+    };
+    void loadModels();
+  }, []);
+
   // Request permissions
   const handlePermission = useCallback(async () => {
     try {
       setStreamError(null);
       const stream = await navigator.mediaDevices.getUserMedia({
         video: true,
-        audio: true,
+        audio: {
+          noiseSuppression: true,
+          echoCancellation: true,
+          autoGainControl: true,
+        },
       });
       streamRef.current = stream;
       setPermissionGranted(true);
 
-      // Attach video
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
+      // The video element is rendered conditionally based on permissionGranted.
+      // We will assign the srcObject in a useEffect to ensure it is mounted.
 
       // Check camera
       const videoTrack = stream.getVideoTracks()[0];
@@ -80,23 +101,88 @@ export default function PreflightStage({
       source.connect(analyser);
       const dataArray = new Uint8Array(analyser.frequencyBinCount);
 
+      let goodAudioFrames = 0;
+
       const detectAudio = () => {
         analyser.getByteFrequencyData(dataArray);
-        const average =
-          dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
+        const average = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
         setAudioLevel(average);
+        
         if (average > AUDIO_THRESHOLD) {
           setChecks((prev) => ({ ...prev, audio: true }));
+          goodAudioFrames++;
+          if (goodAudioFrames > 30) { // Approx 0.5s of accumulated speech peaks
+            setChecks((prev) => ({ ...prev, audioClarity: true }));
+          }
         }
+        
         animFrameRef.current = requestAnimationFrame(detectAudio);
       };
       animFrameRef.current = requestAnimationFrame(detectAudio);
-    } catch {
-      setStreamError(
-        "Kamera ve mikrofon erişimi reddedildi. Lütfen tarayıcı izinlerini kontrol edin."
-      );
+
+      // Setup Face API detection loop
+      let isDetecting = true;
+      const detectFace = async () => {
+        if (!isDetecting) return;
+        if (videoRef.current && videoRef.current.readyState >= 2 && modelsLoadedRef.current) {
+          try {
+            // Increased scoreThreshold to 0.65 to require better lighting/clarity
+            const detections = await faceapi.detectAllFaces(videoRef.current, new faceapi.TinyFaceDetectorOptions({ scoreThreshold: 0.65 }));
+            if (detections.length === 1) {
+              const box = detections[0].box;
+              const faceArea = box.width * box.height;
+              // Minimum face size (approx 100x100 pixels) to ensure they are visible but not too strict
+              if (faceArea < 10000) {
+                setChecks((prev) => ({ ...prev, faceVisible: false }));
+                setStreamError("Lütfen kameraya biraz daha yaklaşın (Yüzünüz çok küçük algılandı).");
+              } else {
+                setChecks((prev) => ({ ...prev, faceVisible: true }));
+                setStreamError(null);
+              }
+            } else if (detections.length > 1) {
+              setChecks((prev) => ({ ...prev, faceVisible: false }));
+              setStreamError("Güvenlik Uyarısı: Kamerada birden fazla kişi tespit edildi!");
+            } else {
+              setChecks((prev) => ({ ...prev, faceVisible: false }));
+              setStreamError("Kamerada yüzünüz net olarak tespit edilemedi. Lütfen ışığı kontrol edin.");
+            }
+          } catch (e) {
+            console.error(e);
+          }
+        }
+        setTimeout(detectFace, 1000);
+      };
+
+      const waitForModels = setInterval(() => {
+        if (modelsLoadedRef.current) {
+          clearInterval(waitForModels);
+          detectFace();
+        }
+      }, 500);
+
+      // Cleanup face detection loop on unmount hook
+      return () => {
+        isDetecting = false;
+        clearInterval(waitForModels);
+      };
+
+    } catch (err: any) {
+      if (err.name === "NotAllowedError") {
+        setStreamError("Kamera ve mikrofon erişimi reddedildi. Lütfen tarayıcı izinlerini kontrol edip tekrar deneyin.");
+      } else if (err.name === "NotFoundError") {
+        setStreamError("Sisteme bağlı bir kamera veya mikrofon bulunamadı. Lütfen donanımınızı kontrol edin.");
+      } else {
+        setStreamError("Donanım erişiminde bir hata oluştu: " + err.message);
+      }
     }
   }, []);
+
+  // Assign stream to video once it is mounted
+  useEffect(() => {
+    if (permissionGranted && videoRef.current && streamRef.current) {
+      videoRef.current.srcObject = streamRef.current;
+    }
+  }, [permissionGranted]);
 
   // Cleanup on unmount or transition
   useEffect(() => {
@@ -129,9 +215,11 @@ export default function PreflightStage({
     icon: React.ReactNode;
   }[] = [
     { key: "internet", label: "İnternet Bağlantısı", icon: <Wifi className="h-4 w-4" /> },
-    { key: "microphone", label: "Mikrofon", icon: <Mic className="h-4 w-4" /> },
-    { key: "camera", label: "Kamera", icon: <Video className="h-4 w-4" /> },
-    { key: "audio", label: "Ortam Sesi", icon: <Volume2 className="h-4 w-4" /> },
+    { key: "microphone", label: "Mikrofon Donanımı", icon: <Mic className="h-4 w-4" /> },
+    { key: "camera", label: "Kamera Bağlantısı", icon: <Video className="h-4 w-4" /> },
+    { key: "faceVisible", label: "Yüz Netliği (AI Analizi)", icon: <User className="h-4 w-4" /> },
+    { key: "audio", label: "Ortam Sesi Eşiği", icon: <Volume2 className="h-4 w-4" /> },
+    { key: "audioClarity", label: "Ses Netliği (AI Analizi)", icon: <Activity className="h-4 w-4" /> },
   ];
 
   return (

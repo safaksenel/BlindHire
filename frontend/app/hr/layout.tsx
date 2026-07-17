@@ -169,7 +169,7 @@ export default function HrLayout({ children }: HrLayoutProps): React.JSX.Element
           {/* Right side */}
           <div className="flex items-center gap-3">
             <PaletteSwitcher />
-            <div className="flex items-center gap-1.5 rounded-full border border-theme-1/10 bg-theme-1/[0.04] px-3 py-1">
+            <div className="hidden md:flex items-center gap-1.5 rounded-full border border-theme-1/10 bg-theme-1/[0.04] px-3 py-1">
               <span className="relative flex h-1.5 w-1.5">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-theme-1 opacity-75" />
                 <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-theme-1" />
@@ -178,6 +178,13 @@ export default function HrLayout({ children }: HrLayoutProps): React.JSX.Element
                 Sistem Aktif
               </span>
             </div>
+            <button 
+              onClick={handleLogout}
+              className="md:hidden flex items-center justify-center p-2 rounded-lg text-white/50 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+              title="Çıkış Yap"
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
           </div>
         </header>
 
