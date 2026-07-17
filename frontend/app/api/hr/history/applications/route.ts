@@ -38,8 +38,8 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       email: app.candidate?.email || "Email Yok",
       jobTitle: app.jobPosting.title,
       cvUrl: app.cvUrl,
-      techScore: app.techScore || Math.floor(Math.random() * (90 - 60) + 60),
-      reliability: app.reliability || Math.floor(Math.random() * (100 - 80) + 80),
+      techScore: app.techScore || 0,
+      reliability: app.reliability || 0,
       status: app.status,
       finalizedAt: new Date(app.updatedAt).toLocaleDateString("tr-TR")
     }));

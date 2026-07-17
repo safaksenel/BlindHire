@@ -24,7 +24,7 @@ export function GlobalHeader({ isAuth }: { readonly isAuth?: boolean }) {
             <AppLogo className="h-8 w-8 translate-x-[2px] drop-shadow-[0_0_8px_var(--theme-c1)]" />
           </div>
           <span className="font-bold tracking-tight text-white transition-colors group-hover:text-white/95">
-            AgenticHR<span className="font-medium" style={{ color: "var(--theme-c1)" }}>.ai</span>
+            BlindHire<span className="font-medium" style={{ color: "var(--theme-c1)" }}>.ai</span>
           </span>
         </Link>
         <div className="pointer-events-auto flex items-center gap-3">

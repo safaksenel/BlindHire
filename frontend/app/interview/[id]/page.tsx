@@ -28,7 +28,7 @@ interface StateConfig {
 
 const STATE_CONFIG: Record<AiState, StateConfig> = {
   listening: {
-    label: "AgenticHR Dinliyor...",
+    label: "BlindHire Dinliyor...",
     color: "rgb(34, 211, 238)",
     glowColor: "rgba(34, 211, 238, 0.15)",
     ringColor: "rgba(34, 211, 238, 0.08)",
@@ -40,7 +40,7 @@ const STATE_CONFIG: Record<AiState, StateConfig> = {
     innerShadow: "0 0 60px 10px rgba(34,211,238,0.12), 0 0 120px 40px rgba(34,211,238,0.06)",
   },
   thinking: {
-    label: "AgenticHR Düşünüyor...",
+    label: "BlindHire Düşünüyor...",
     color: "rgb(168, 85, 247)",
     glowColor: "rgba(168, 85, 247, 0.18)",
     ringColor: "rgba(168, 85, 247, 0.1)",
@@ -52,7 +52,7 @@ const STATE_CONFIG: Record<AiState, StateConfig> = {
     innerShadow: "0 0 80px 15px rgba(168,85,247,0.15), 0 0 160px 50px rgba(168,85,247,0.07)",
   },
   speaking: {
-    label: "AgenticHR Konuşuyor...",
+    label: "BlindHire Konuşuyor...",
     color: "rgb(52, 211, 153)",
     glowColor: "rgba(52, 211, 153, 0.15)",
     ringColor: "rgba(52, 211, 153, 0.08)",
@@ -66,10 +66,10 @@ const STATE_CONFIG: Record<AiState, StateConfig> = {
 } as const;
 
 const MOCK_TRANSCRIPT_LINES: readonly string[] = [
-  "AgenticHR: Merhaba, mülakata hoş geldiniz.",
-  "AgenticHR: Özgeçmişinizi inceledim, deneyimleriniz oldukça etkileyici.",
-  "AgenticHR: Size teknik becerilerinizle ilgili birkaç sorum olacak.",
-  "AgenticHR: Hazırsanız başlayalım.",
+  "BlindHire: Merhaba, mülakata hoş geldiniz.",
+  "BlindHire: Özgeçmişinizi inceledim, deneyimleriniz oldukça etkileyici.",
+  "BlindHire: Size teknik becerilerinizle ilgili birkaç sorum olacak.",
+  "BlindHire: Hazırsanız başlayalım.",
 ] as const;
 
 function formatTime(seconds: number): string {
@@ -261,7 +261,7 @@ export default function InterviewPage({ params }: { params: Promise<{ id: string
             </span>
           </div>
           <span className="text-sm font-medium text-white/40">
-            AgenticHR Session
+            BlindHire Session
           </span>
         </div>
 

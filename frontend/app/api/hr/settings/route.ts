@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
     const userId = request.cookies.get("user_id")?.value;
@@ -25,15 +27,24 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       settings = {
         id: "default",
         companyId,
-        autoInviteThreshold: 80,
-        manualReviewThreshold: 60,
-        autoRejectThreshold: 59,
+        stage1AutoProceedThreshold: 75,
+        stage1AutoRejectThreshold: 50,
+        stage2AutoInviteThreshold: 75,
+        stage2AutoRejectThreshold: 60,
+        stage3AutoProceedThreshold: 75,
+        stage3AutoRejectThreshold: 50,
+        stage4AutoHireThreshold: 80,
+        stage4AutoRejectThreshold: 50,
         createdAt: new Date(),
         updatedAt: new Date()
       };
     }
 
-    return NextResponse.json(settings);
+    return NextResponse.json(settings, {
+      headers: {
+        'Cache-Control': 'no-store, max-age=0, must-revalidate',
+      }
+    });
   } catch (err) {
     console.error(err);
     return NextResponse.json({ message: "Sunucu hatası." }, { status: 500 });
@@ -47,7 +58,17 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ message: "Oturum açılmamış." }, { status: 401 });
     }
 
-    const { autoInviteThreshold, manualReviewThreshold, autoRejectThreshold } = await request.json();
+    const payload = await request.json();
+    const parseThresh = (val: any, defaultVal: number) => (val !== undefined && val !== null && !isNaN(parseInt(val))) ? parseInt(val) : defaultVal;
+    
+    const stage1AutoProceedThreshold = parseThresh(payload.stage1AutoProceedThreshold, 75);
+    const stage1AutoRejectThreshold = parseThresh(payload.stage1AutoRejectThreshold, 50);
+    const stage2AutoInviteThreshold = parseThresh(payload.stage2AutoInviteThreshold, 75);
+    const stage2AutoRejectThreshold = parseThresh(payload.stage2AutoRejectThreshold, 60);
+    const stage3AutoProceedThreshold = parseThresh(payload.stage3AutoProceedThreshold, 75);
+    const stage3AutoRejectThreshold = parseThresh(payload.stage3AutoRejectThreshold, 50);
+    const stage4AutoHireThreshold = parseThresh(payload.stage4AutoHireThreshold, 80);
+    const stage4AutoRejectThreshold = parseThresh(payload.stage4AutoRejectThreshold, 50);
 
     const hrUser = await prisma.user.findUnique({
       where: { id: userId }
@@ -62,15 +83,25 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const newSettings = await prisma.hRSettings.upsert({
       where: { companyId },
       update: {
-        autoInviteThreshold,
-        manualReviewThreshold,
-        autoRejectThreshold
+        stage1AutoProceedThreshold,
+        stage1AutoRejectThreshold,
+        stage2AutoInviteThreshold,
+        stage2AutoRejectThreshold,
+        stage3AutoProceedThreshold,
+        stage3AutoRejectThreshold,
+        stage4AutoHireThreshold,
+        stage4AutoRejectThreshold
       },
       create: {
         companyId,
-        autoInviteThreshold,
-        manualReviewThreshold,
-        autoRejectThreshold
+        stage1AutoProceedThreshold,
+        stage1AutoRejectThreshold,
+        stage2AutoInviteThreshold,
+        stage2AutoRejectThreshold,
+        stage3AutoProceedThreshold,
+        stage3AutoRejectThreshold,
+        stage4AutoHireThreshold,
+        stage4AutoRejectThreshold
       }
     });
 

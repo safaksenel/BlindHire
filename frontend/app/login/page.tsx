@@ -88,7 +88,7 @@ function LoginInner(): React.JSX.Element {
       } else if (data.role === "HR") {
         router.push("/hr/dashboard");
       } else {
-        router.push("/dashboard");
+        router.push("/");
       }
       router.refresh();
     } catch (err) {

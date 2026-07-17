@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { History, Loader2, AlertTriangle, SearchX, CheckCircle2, XCircle, FileText, User } from "lucide-react";
+import { History, Loader2, AlertTriangle, SearchX, CheckCircle2, XCircle, FileText, User, Trash2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface HistoryApplication {
@@ -33,6 +33,20 @@ export default function ApplicationHistoryPage(): React.JSX.Element {
       setError(err.message);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Bu başvuru kaydını silmek istediğinize emin misiniz? (Bu işlem adayın tekrar başvurabilmesini sağlar)")) return;
+    
+    try {
+      const res = await fetch(`/api/hr/history/applications/${id}`, {
+        method: "DELETE"
+      });
+      if (!res.ok) throw new Error("Silme işlemi başarısız oldu.");
+      setApps(apps.filter(app => app.id !== id));
+    } catch (err: any) {
+      alert(err.message);
     }
   };
 
@@ -94,7 +108,7 @@ export default function ApplicationHistoryPage(): React.JSX.Element {
                   <th className="px-6 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-zinc-500">Aday Adı</th>
                   <th className="px-6 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-zinc-500">Başvurulan İlan</th>
                   <th className="px-6 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-zinc-500">Son İşlem</th>
-                  <th className="px-6 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-zinc-500">AI Skoru</th>
+                  <th className="px-6 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-zinc-500">Skorlar (ATS & LLM)</th>
                   <th className="px-6 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-zinc-500">Durum</th>
                 </tr>
               </thead>
@@ -122,8 +136,22 @@ export default function ApplicationHistoryPage(): React.JSX.Element {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="text-sm font-semibold text-zinc-200">{app.techScore}</span>
-                      <span className="text-xs text-zinc-500 ml-1">/ 100</span>
+                      <div className="flex flex-col gap-1.5 min-w-[120px]">
+                        <div className="flex items-center justify-between gap-3 text-xs">
+                           <span className="text-zinc-400">ATS (Algoritma):</span>
+                           <span><strong className="text-zinc-200">{app.techScore}</strong><span className="text-zinc-600">/100</span></span>
+                        </div>
+                        <div className="flex items-center justify-between gap-3 text-xs">
+                           <span className="text-zinc-400">LLM (Groq AI):</span>
+                           <span>
+                             {app.reliability > 0 ? (
+                               <><strong className="text-theme-1">{app.reliability}</strong><span className="text-zinc-600">/100</span></>
+                             ) : (
+                               <span className="text-zinc-600 italic">Girmedi</span>
+                             )}
+                           </span>
+                        </div>
+                      </div>
                     </td>
                     <td className="px-6 py-4 text-right">
                        {app.status === "APPROVED" || app.status === "COMPLETED" ? (
@@ -139,6 +167,14 @@ export default function ApplicationHistoryPage(): React.JSX.Element {
                            <History className="h-3.5 w-3.5" /> {app.status} (Süreçte)
                          </span>
                        )}
+                       
+                       <button
+                         onClick={() => handleDelete(app.id)}
+                         title="Başvuru Kaydını Sil (Aday tekrar başvurabilir)"
+                         className="ml-3 inline-flex items-center justify-center rounded-lg border border-transparent p-1.5 text-zinc-500 transition-all hover:border-red-500/30 hover:bg-gradient-to-br hover:from-red-500/10 hover:to-theme-1/10 hover:text-red-400 hover:shadow-[0_0_12px_rgba(239,68,68,0.3)]"
+                       >
+                         <Trash2 className="h-4 w-4" />
+                       </button>
                     </td>
                   </tr>
                 ))}

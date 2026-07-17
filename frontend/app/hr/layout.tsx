@@ -75,7 +75,7 @@ export default function HrLayout({ children }: HrLayoutProps): React.JSX.Element
           </div>
           <div className="flex flex-col">
             <span className="text-sm font-bold text-white">
-              AgenticHR<span className="text-theme-1">.ai</span>
+              BlindHire<span className="text-theme-1">.ai</span>
             </span>
             <span className="text-[10px] font-medium uppercase tracking-widest text-white/20">
               Admin
@@ -154,7 +154,7 @@ export default function HrLayout({ children }: HrLayoutProps): React.JSX.Element
           {/* Mobile logo */}
           <div className="flex items-center gap-2 md:hidden">
             <Shield className="h-4 w-4 text-theme-1" />
-            <span className="text-sm font-bold text-white">AgenticHR</span>
+            <span className="text-sm font-bold text-white">BlindHire</span>
           </div>
 
           {/* Breadcrumb area */}

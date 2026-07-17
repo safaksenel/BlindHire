@@ -10,20 +10,20 @@ import { useRouter } from "next/navigation";
 
 // Zod Schemas
 const educationSchema = z.object({
-  university: z.string().min(2, "Üniversite adı zorunludur."),
-  faculty: z.string().min(2, "Fakülte/Bölüm zorunludur."),
-  degree: z.string().min(1, "Derece zorunludur."),
-  year: z.string().min(1, "Sınıf/Yıl zorunludur."),
-  gpa: z.string().min(1, "Not ortalaması zorunludur."),
-  startDate: z.string().min(1, "Başlangıç tarihi zorunludur."),
+  university: z.string().optional(),
+  faculty: z.string().optional(),
+  degree: z.string().optional(),
+  year: z.string().optional(),
+  gpa: z.string().optional(),
+  startDate: z.string().optional(),
   endDate: z.string().optional(),
-  isHighSchool: z.boolean().default(false),
+  isHighSchool: z.boolean().optional(),
 });
 
 const experienceSchema = z.object({
-  type: z.string().min(1, "Deneyim tipi zorunludur."),
-  title: z.string().min(1, "Başlık zorunludur."),
-  organization: z.string().min(1, "Kurum zorunludur."),
+  type: z.string().optional(),
+  title: z.string().optional(),
+  organization: z.string().optional(),
   description: z.string().optional(),
   startDate: z.string().optional(),
   endDate: z.string().optional(),
@@ -34,30 +34,30 @@ const profileSchema = z.object({
   email: z.string().email("Geçerli bir e-posta giriniz."),
   avatarUrl: z.string().optional(),
   tcKimlikNo: z.string().optional(),
-  phone: z.string().min(10, "Geçerli bir telefon numarası giriniz."),
-  address: z.string().min(5, "Geçerli bir adres giriniz."),
-  dateOfBirth: z.string().min(1, "Doğum tarihi zorunludur."),
-  educations: z.array(educationSchema).min(1, "En az bir eğitim bilgisi eklemelisiniz."),
+  phone: z.string().optional(),
+  address: z.string().optional(),
+  dateOfBirth: z.string().optional(),
+  educations: z.array(educationSchema).optional(),
   internshipPreferences: z.object({
-    type: z.string().min(1, "Staj türü zorunludur."),
-    duration: z.coerce.number().min(1, "Staj süresi (gün) zorunludur."),
-    insurance: z.string().min(1, "Sigorta durumu zorunludur."),
-    workModel: z.string().min(1, "Çalışma modeli zorunludur."),
-    availability: z.string().min(1, "Uygunluk durumu zorunludur."),
-  }),
+    type: z.string().optional(),
+    duration: z.coerce.number().optional(),
+    insurance: z.string().optional(),
+    workModel: z.string().optional(),
+    availability: z.string().optional(),
+  }).optional(),
   skills: z.object({
-    foreignLanguages: z.string().min(1, "Yabancı dil bilgisi zorunludur."),
-    technicalSkills: z.string().min(1, "Teknik yetenekler zorunludur."),
+    foreignLanguages: z.string().optional(),
+    technicalSkills: z.string().optional(),
     softSkills: z.string().optional(),
-  }),
+  }).optional(),
   experiences: z.array(experienceSchema).optional(),
   documents: z.object({
-    cvUrl: z.string().min(1, "CV yüklemek zorunludur."),
+    cvUrl: z.string().optional(),
     transcriptUrl: z.string().optional(),
     linkedInUrl: z.string().optional(),
     githubUrl: z.string().optional(),
     portfolioUrl: z.string().optional(),
-  })
+  }).optional()
 });
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
@@ -98,6 +98,7 @@ export default function CandidateProfilePage() {
     watch,
     formState: { errors },
   } = useForm<ProfileFormValues>({
+    // @ts-ignore
     resolver: zodResolver(profileSchema),
     defaultValues: { educations: [], experiences: [], documents: { cvUrl: "" } }
   });
@@ -174,9 +175,9 @@ export default function CandidateProfilePage() {
         ...data,
         isProfileComplete: true,
         skills: {
-          foreignLanguages: data.skills.foreignLanguages.split(",").map(s => s.trim()).filter(Boolean),
-          technicalSkills: data.skills.technicalSkills.split(",").map(s => s.trim()).filter(Boolean),
-          softSkills: data.skills.softSkills ? data.skills.softSkills.split(",").map(s => s.trim()).filter(Boolean) : [],
+          foreignLanguages: (data.skills?.foreignLanguages || "").split(",").map(s => s.trim()).filter(Boolean),
+          technicalSkills: (data.skills?.technicalSkills || "").split(",").map(s => s.trim()).filter(Boolean),
+          softSkills: (data.skills?.softSkills || "").split(",").map(s => s.trim()).filter(Boolean),
         }
       };
 
@@ -400,7 +401,7 @@ export default function CandidateProfilePage() {
               İptal
             </button>
           )}
-          <button onClick={handleSubmit(onSubmit, (errs) => {
+          <button onClick={handleSubmit(onSubmit as any, (errs) => {
             console.log("Validation errors:", errs);
             const firstErrorKey = Object.keys(errs)[0];
             addToast(`Lütfen tüm zorunlu alanları doldurun. (Eksik/Hatalı alan: ${firstErrorKey})`, "error");

@@ -3,6 +3,11 @@ node_modules/
 .env.local
 dist/
 build/
+node_modules/
+.env
+.env.local
+dist/
+build/
 .next/
 *.log
 .DS_Store
@@ -14,3 +19,29 @@ ai_agent/durum.md
 backend/api/static/cache/
 backend/api/venv/
 
+# AI Guide
+frontend/PROJECT_STRUCTURE.md
+
+# Databases
+*.db
+*.db-journal
+prisma/dev.db
+prisma/dev.db-journal
+
+# Temporary and uploads
+frontend/public/uploads/
+frontend/scratch/
+frontend/scripts/
+
+
+# KESIN GUVENLIK VE TEMIZLIK KURALLARI
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+ai_agent/data/
+frontend/public/uploads/
+.idea/
+coverage/
+*.pem
+*.key

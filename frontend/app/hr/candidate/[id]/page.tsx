@@ -13,7 +13,6 @@ import {
 } from "recharts";
 import {
   ArrowLeft,
-  Unlock,
   FileDown,
   Brain,
   ShieldCheck,
@@ -24,53 +23,13 @@ import {
   Clock,
   Hash,
   Loader2,
-  FileText
+  FileText,
+  GraduationCap,
+  Briefcase,
+  Code2
 } from "lucide-react";
 
-/* ══════════════════════════════════════════════════════
-   TYPES & DATA (Proctoring/Transcript are still UI mockups)
-   ══════════════════════════════════════════════════════ */
 
-interface RadarDataPoint {
-  readonly subject: string;
-  readonly score: number;
-  readonly fullMark: number;
-}
-
-type ProctorSeverity = "low" | "negligible" | "clean";
-
-interface ProctorEvent {
-  readonly time: string;
-  readonly type: string;
-  readonly detail: string;
-  readonly severity: ProctorSeverity;
-}
-
-const PROCTOR_LOG: readonly ProctorEvent[] = [
-  { time: "14:02", type: "İnceleme", detail: "İkinci ses algılandı (Düşük risk)", severity: "low" },
-  { time: "12:45", type: "Göz teması", detail: "Kamera odak kaybı (İhmal edilebilir)", severity: "negligible" },
-  { time: "09:10", type: "Teknik", detail: "Kusursuz cevap", severity: "clean" },
-  { time: "07:30", type: "Ortam", detail: "Arka plan sesi normlarda", severity: "clean" },
-  { time: "03:15", type: "Bağlantı", detail: "Stabil bağlantı doğrulandı", severity: "clean" },
-] as const;
-
-interface TranscriptLine {
-  readonly speaker: "ai" | "candidate";
-  readonly text: string;
-}
-
-const TRANSCRIPT: readonly TranscriptLine[] = [
-  { speaker: "ai", text: "Önceki deneyimlerinizde karşılaştığınız en büyük teknik zorluk neydi?" },
-  { speaker: "candidate", text: "Büyük bir veri taşıma operasyonunda [SANSÜRLENDİ] downtime olmadan geçiş yapmamız gerekiyordu. Veritabanı replikasyonu ve dual-write stratejisi ile bu sorunu çözdük." },
-  { speaker: "ai", text: "Bu süreçte öğrendiğiniz en önemli ders neydi?" },
-  { speaker: "candidate", text: "Rollback planının en az deployment planı kadar detaylı olması gerektiği. Özellikle [SANSÜRLENDİ] aşamasında yaşanan bir darboğaz bizi bu konuda çok şey öğretti." },
-] as const;
-
-const SEVERITY_STYLES: Record<ProctorSeverity, { dot: string; bg: string; text: string }> = {
-  low: { dot: "bg-theme-2", bg: "bg-theme-2/[0.06] border-theme-2/10", text: "text-theme-2/70" },
-  negligible: { dot: "bg-zinc-500", bg: "bg-zinc-500/[0.04] border-zinc-500/10", text: "text-zinc-400/60" },
-  clean: { dot: "bg-theme-1", bg: "bg-theme-1/[0.04] border-theme-1/10", text: "text-theme-1/60" },
-} as const;
 
 /* ══════════════════════════════════════════════════════
    CUSTOM TOOLTIP
@@ -78,7 +37,7 @@ const SEVERITY_STYLES: Record<ProctorSeverity, { dot: string; bg: string; text: 
 
 interface TooltipPayloadItem {
   readonly value: number;
-  readonly payload: RadarDataPoint;
+  readonly payload: any;
 }
 
 interface CustomTooltipProps {
@@ -110,7 +69,6 @@ export default function CandidatePage({ params }: CandidatePageProps): React.JSX
   const [data, setData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
-  const [showIdentity, setShowIdentity] = useState(false);
 
   useEffect(() => {
     async function fetchData() {
@@ -173,7 +131,7 @@ export default function CandidatePage({ params }: CandidatePageProps): React.JSX
             </div>
             <div>
               <h1 className="text-xl font-bold text-white">
-                {showIdentity ? data.fullName : `Aday #${data.id.substring(0, 5)}`}
+                {data.fullName}
               </h1>
               <p className="text-sm text-white/30">
                 Başvurulan Pozisyon:{" "}
@@ -181,9 +139,7 @@ export default function CandidatePage({ params }: CandidatePageProps): React.JSX
                   {data.role}
                 </span>
               </p>
-              {showIdentity && (
-                  <p className="text-xs text-theme-1/80 mt-1">{data.email}</p>
-              )}
+              <p className="text-xs text-theme-1/80 mt-1">{data.email}</p>
             </div>
           </div>
           <div className="flex items-center gap-2 pl-[52px]">
@@ -200,17 +156,9 @@ export default function CandidatePage({ params }: CandidatePageProps): React.JSX
 
         {/* Action buttons */}
         <div className="flex flex-wrap items-center gap-2 mt-4 sm:mt-0">
-          <button
-            type="button"
-            onClick={() => setShowIdentity(!showIdentity)}
-            className="inline-flex items-center gap-2 rounded-xl border border-theme-2/15 bg-theme-2/[0.06] px-4 py-2.5 text-xs font-semibold text-theme-2 transition-all duration-300 hover:border-theme-2/25 hover:bg-theme-2/[0.1]"
-          >
-            <Unlock className="h-3.5 w-3.5" />
-            {showIdentity ? "Kimliği Gizle" : "Kimliği Aç"}
-          </button>
           {data.cvUrl ? (
             <a
-              href={data.cvUrl}
+              href={data.cvUrl.startsWith('http') ? data.cvUrl : (data.cvUrl.includes('/uploads/') ? data.cvUrl : `/uploads/${data.cvUrl.replace(/^\/+/, '')}`)}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 rounded-xl border border-theme-1/15 bg-theme-1/[0.06] px-4 py-2.5 text-xs font-semibold text-theme-1 transition-all duration-300 hover:border-theme-1/25 hover:bg-theme-1/[0.1]"
@@ -250,18 +198,26 @@ export default function CandidatePage({ params }: CandidatePageProps): React.JSX
             <p className="text-sm leading-relaxed text-white/40">
               Aday, {data.role} gereksinimlerine <span className="font-medium text-white/60">{data.techScore >= 75 ? "yüksek oranda" : "orta düzeyde"} uyum</span> gösterdi. Teknik analizlerde tutarlı cevaplar verirken iletişim becerileri yeterli bulundu.
             </p>
-            <div className="mt-5 flex gap-3">
-              <div className="flex-1 rounded-xl border border-theme-1/10 bg-theme-1/[0.04] p-3 text-center">
-                <p className="text-xl font-bold text-theme-1">{data.techScore}</p>
-                <p className="mt-0.5 text-[10px] text-white/25">Teknik Skor</p>
+            <div className="mt-5 grid grid-cols-2 gap-3">
+              <div className="rounded-xl border border-theme-1/10 bg-theme-1/[0.04] p-3 text-center">
+                <p className="text-xl font-bold text-theme-1">{data.techScore || "-"}</p>
+                <p className="mt-0.5 text-[10px] text-white/25">Aşama 1: Algoritma</p>
               </div>
-              <div className="flex-1 rounded-xl border border-theme-1/10 bg-theme-1/[0.04] p-3 text-center">
-                <p className="text-xl font-bold text-theme-1">%{data.reliability}</p>
-                <p className="mt-0.5 text-[10px] text-white/25">Güvenilirlik</p>
+              <div className="rounded-xl border border-theme-1/10 bg-theme-1/[0.04] p-3 text-center">
+                <p className="text-xl font-bold text-theme-1">{data.reliability || "-"}</p>
+                <p className="mt-0.5 text-[10px] text-white/25">Aşama 2: AI Analizi</p>
               </div>
-              <div className="flex-1 rounded-xl border border-theme-2/10 bg-theme-2/[0.04] p-3 text-center">
-                <p className="text-xl font-bold text-theme-2">{overallGrade}</p>
-                <p className="mt-0.5 text-[10px] text-white/25">Genel Derece</p>
+              <div className="rounded-xl border border-theme-3/10 bg-theme-3/[0.04] p-3 text-center">
+                <p className="text-xl font-bold text-theme-3">{data.interviewScore || "-"}</p>
+                <p className="mt-0.5 text-[10px] text-white/25">Aşama 3: Mülakat</p>
+              </div>
+              <div className="rounded-xl border border-theme-4/10 bg-theme-4/[0.04] p-3 text-center">
+                <p className="text-xl font-bold text-theme-4">{data.overallScore || "-"}</p>
+                <p className="mt-0.5 text-[10px] text-white/25">Aşama 4: Genel Puan</p>
+              </div>
+              <div className="col-span-2 rounded-xl border border-theme-5/10 bg-theme-5/[0.04] p-3 text-center">
+                <p className="text-xl font-bold text-theme-5">{overallGrade}</p>
+                <p className="mt-0.5 text-[10px] text-white/25">Performans Derecesi</p>
               </div>
             </div>
           </div>
@@ -331,94 +287,74 @@ export default function CandidatePage({ params }: CandidatePageProps): React.JSX
           </div>
         </div>
 
-        {/* ─── BOTTOM LEFT: Proctoring Log ─── */}
-        <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015]">
-          <div className="flex items-center gap-2.5 border-b border-white/[0.06] px-6 py-4">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-theme-1/10">
-              <ShieldCheck className="h-3.5 w-3.5 text-theme-1" />
+        {/* ALT KISIM: EĞİTİM VE DENEYİM */}
+        <div className="col-span-1 xl:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+          {/* Eğitim Bilgileri */}
+          <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015] p-6">
+            <div className="mb-4 flex items-center gap-2">
+              <GraduationCap className="h-5 w-5 text-theme-1" />
+              <h2 className="text-sm font-semibold text-white/70">Eğitim Bilgileri</h2>
             </div>
-            <h2 className="text-sm font-semibold text-white/70">
-              Proctoring Log
-            </h2>
-            <span className="ml-auto text-[10px] text-white/15">Örnek Veri</span>
-          </div>
-          <div className="divide-y divide-white/[0.03]">
-            {PROCTOR_LOG.map((event, i) => {
-              const style = SEVERITY_STYLES[event.severity];
-              return (
-                <div
-                  key={i}
-                  className="flex items-start gap-4 px-6 py-3.5 transition-colors hover:bg-white/[0.01]"
-                >
-                  <span className="mt-0.5 shrink-0 font-mono text-xs text-white/20">
-                    {event.time}
-                  </span>
-                  <span className={`mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full ${style.dot}`} />
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className={`rounded-md border px-2 py-0.5 text-[10px] font-medium ${style.bg} ${style.text}`}>
-                        {event.type}
-                      </span>
-                      {event.severity === "low" && (
-                        <AlertTriangle className="h-3 w-3 text-theme-2/40" />
-                      )}
-                    </div>
-                    <p className="mt-1 text-xs text-white/35">{event.detail}</p>
+            {data.educations && data.educations.length > 0 ? (
+              <div className="space-y-3">
+                {data.educations.map((edu: any) => (
+                  <div key={edu.id} className="rounded-xl border border-theme-1/10 bg-theme-1/[0.02] p-4">
+                    <h3 className="font-semibold text-white/90">{edu.university}</h3>
+                    <p className="text-xs text-white/60 mt-1">{edu.faculty} - {edu.degree}</p>
+                    <p className="text-[11px] text-theme-1 mt-2">
+                      {new Date(edu.startDate).getFullYear()} - {edu.endDate ? new Date(edu.endDate).getFullYear() : 'Devam Ediyor'} • {edu.gpa} Ort.
+                    </p>
                   </div>
-                </div>
-              );
-            })}
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-white/30 text-center py-6">Eğitim bilgisi bulunmuyor.</p>
+            )}
+          </div>
+
+          {/* Deneyimler */}
+          <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015] p-6">
+            <div className="mb-4 flex items-center gap-2">
+              <Briefcase className="h-5 w-5 text-theme-1" />
+              <h2 className="text-sm font-semibold text-white/70">Deneyimler</h2>
+            </div>
+            {data.experiences && data.experiences.length > 0 ? (
+              <div className="space-y-3">
+                {data.experiences.map((exp: any) => (
+                  <div key={exp.id} className="rounded-xl border border-theme-1/10 bg-theme-1/[0.02] p-4">
+                    <h3 className="font-semibold text-white/90">{exp.organization}</h3>
+                    <p className="text-xs text-white/60 mt-1">{exp.title}</p>
+                    <p className="text-[11px] text-theme-1 mt-2">
+                      {exp.startDate ? new Date(exp.startDate).getFullYear() : ''} - {exp.endDate ? new Date(exp.endDate).getFullYear() : 'Devam Ediyor'}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-white/30 text-center py-6">Deneyim bilgisi bulunmuyor.</p>
+            )}
           </div>
         </div>
 
-        {/* ─── BOTTOM RIGHT: Anonymous Transcript ─── */}
-        <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015]">
-          <div className="flex items-center gap-2.5 border-b border-white/[0.06] px-6 py-4">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-theme-3/10">
-              <ScrollText className="h-3.5 w-3.5 text-theme-3" />
-            </div>
-            <h2 className="text-sm font-semibold text-white/70">
-              Transkript
-            </h2>
-            <span className="ml-auto text-[10px] text-white/15">
-               {showIdentity ? "Açık" : "Anonim"}
-            </span>
+        {/* TEKNİK YETENEKLER */}
+        <div className="col-span-1 xl:col-span-3 rounded-2xl border border-white/[0.06] bg-white/[0.015] p-6 mt-6">
+          <div className="mb-4 flex items-center gap-2">
+            <Code2 className="h-5 w-5 text-theme-1" />
+            <h2 className="text-sm font-semibold text-white/70">Teknik Yetenekler</h2>
           </div>
-          <div className="max-h-[320px] overflow-y-auto">
-            <div className="space-y-0 divide-y divide-white/[0.03]">
-              {TRANSCRIPT.map((line, i) => (
-                <div
-                  key={i}
-                  className={`px-6 py-3.5 ${
-                    line.speaker === "ai" ? "bg-white/[0.01]" : ""
-                  }`}
-                >
-                  <span
-                    className={`text-[10px] font-semibold uppercase tracking-wider ${
-                      line.speaker === "ai"
-                        ? "text-theme-1/50"
-                        : "text-theme-1/50"
-                    }`}
-                  >
-                    {line.speaker === "ai" ? "AgenticHR" : (showIdentity ? data.fullName : `Aday #${data.id.substring(0, 5)}`)}
-                  </span>
-                  <p className="mt-1.5 text-xs leading-relaxed text-white/40">
-                    {showIdentity ? line.text.replace(/\[SANSÜRLENDİ\]/g, "---") : line.text.split("[SANSÜRLENDİ]").map((part, j, arr) => (
-                      <span key={j}>
-                        {part}
-                        {j < arr.length - 1 && (
-                          <span className="mx-0.5 rounded bg-red-500/10 px-1.5 py-0.5 font-mono text-[10px] font-bold text-red-400/60">
-                            [SANSÜRLENDİ]
-                          </span>
-                        )}
-                      </span>
-                    ))}
-                  </p>
-                </div>
+          {data.skills?.technicalSkills ? (
+            <div className="flex flex-wrap gap-2">
+              {data.skills.technicalSkills.replace(/[\[\]"']/g, '').split(',').filter((s: string) => s.trim().length > 0).map((skill: string, idx: number) => (
+                <span key={idx} className="rounded-md border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-white/70">
+                  {skill.trim()}
+                </span>
               ))}
             </div>
-          </div>
+          ) : (
+            <p className="text-xs text-white/30 text-center py-6">Teknik yetenek bilgisi bulunmuyor.</p>
+          )}
         </div>
+
       </div>
     </div>
   );
