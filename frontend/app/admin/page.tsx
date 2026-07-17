@@ -20,6 +20,13 @@ import {
  FileText
 } from "lucide-react";
 
+interface Candidate {
+  id: string;
+  fullName: string;
+  email: string;
+  createdAt: string;
+}
+
 interface Company {
  id: string;
  name: string;
@@ -52,6 +59,22 @@ interface Application {
  createdAt: string;
 }
 
+const translateStatus = (status: string) => {
+  const map: Record<string, string> = {
+    ACTIVE: "Aktif",
+    SCHEDULED: "İleri Tarihli",
+    EXPIRED: "Süresi Dolmuş",
+    ARCHIVED: "Arşivlenmiş",
+    PENDING: "Beklemede",
+    INVITED: "Mülakata Davet Edildi",
+    INTERVIEW_INVITED: "Mülakata Davet Edildi",
+    REJECTED: "Reddedildi",
+    HIRED: "İşe Alındı",
+    COMPLETED: "Tamamlandı"
+  };
+  return map[status] || status;
+};
+
 export default function SuperAdminDashboard(): React.JSX.Element {
  const router = useRouter();
 
@@ -60,6 +83,7 @@ export default function SuperAdminDashboard(): React.JSX.Element {
  const [hrUsers, setHrUsers] = useState<HRUser[]>([]);
  const [jobs, setJobs] = useState<Job[]>([]);
  const [applications, setApplications] = useState<Application[]>([]);
+ const [candidates, setCandidates] = useState<Candidate[]>([]);
  const [isLoading, setIsLoading] = useState<boolean>(true);
  const [actionLoading, setActionLoading] = useState<string | null>(null);
  const [error, setError] = useState<string>("");
@@ -76,14 +100,15 @@ export default function SuperAdminDashboard(): React.JSX.Element {
  setIsLoading(true);
  setError("");
  try {
- const [compRes, hrRes, jobRes, appRes] = await Promise.all([
+ const [compRes, hrRes, jobRes, appRes, candRes] = await Promise.all([
  fetch("/api/admin/companies"),
  fetch("/api/admin/hr-users"),
  fetch("/api/admin/jobs"),
  fetch("/api/admin/applications"),
+ fetch("/api/admin/candidates"),
  ]);
 
- if (!compRes.ok || !hrRes.ok || !jobRes.ok || !appRes.ok) {
+ if (!compRes.ok || !hrRes.ok || !jobRes.ok || !appRes.ok || !candRes.ok) {
  throw new Error("Veriler yüklenirken hata oluştu.");
  }
 
@@ -91,11 +116,13 @@ export default function SuperAdminDashboard(): React.JSX.Element {
  const hrData = await hrRes.json();
  const jobData = await jobRes.json();
  const appData = await appRes.json();
+ const candData = await candRes.json();
 
  setCompanies(compData);
  setHrUsers(hrData);
  setJobs(jobData);
  setApplications(appData);
+ setCandidates(candData);
  } catch (err: any) {
  setError(err.message || "Sunucu ile bağlantı kurulamadı.");
  } finally {
@@ -240,32 +267,29 @@ export default function SuperAdminDashboard(): React.JSX.Element {
  }
  };
 
- const handleDeleteApplication = async (id: string, deleteUser: boolean = false) => {
- const msg = deleteUser 
- ? "Bu başvuruyu VE adayın sistemdeki hesabını silmek istediğinize emin misiniz?" 
- : "Sadece bu başvuruyu silmek istediğinize emin misiniz?";
- if (!confirm(msg)) return;
+ const handleDeleteCandidate = async (id: string) => {
+    if (!confirm("Bu adayı sistemden kalıcı olarak silmek istediğinize emin misiniz?")) return;
 
- setActionLoading(`delete_app_${id}`);
- setError("");
- setSuccess("");
+    setActionLoading(`delete_cand_${id}`);
+    setError("");
+    setSuccess("");
 
- try {
- const response = await fetch(`/api/admin/applications?id=${id}&deleteUser=${deleteUser}`, { method: "DELETE" });
- if (!response.ok) throw new Error((await response.json()).message || "Başvuru silinemedi.");
+    try {
+      const response = await fetch(`/api/admin/candidates?id=${id}`, { method: "DELETE" });
+      if (!response.ok) throw new Error((await response.json()).message || "Aday silinemedi.");
 
- setSuccess(deleteUser ? "Başvuru ve aday silindi." : "Başvuru silindi.");
- void fetchData();
- } catch (err: any) {
- setError(err.message);
- } finally {
- setActionLoading(null);
- }
- };
+      setSuccess("Aday sistemden başarıyla silindi.");
+      void fetchData();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setActionLoading(null);
+    }
+  };
 
- return (
- <main className="min-h-screen text-white py-12 px-6">
- <div className="max-w-7xl mx-auto">
+  return (
+  <main className="min-h-screen text-white py-12 px-6 bg-black">
+  <div className="max-w-7xl mx-auto">
  {/* Header */}
  <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-white/[0.06] pb-8 mb-12">
  <div className="flex items-center gap-3">
@@ -277,6 +301,10 @@ export default function SuperAdminDashboard(): React.JSX.Element {
  <p className="text-sm text-zinc-500 mt-0.5">Tüm sistem veritabanı yönetim merkezi (CRUD)</p>
  </div>
  </div>
+ <button onClick={handleLogout} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500/20 font-medium transition-colors">
+ <LogOut className="h-4 w-4" />
+ Çıkış Yap
+ </button>
  </header>
 
  {/* Global Alert Notification */}
@@ -305,15 +333,15 @@ export default function SuperAdminDashboard(): React.JSX.Element {
  {/* Forms section */}
  <div className="lg:col-span-5 space-y-8">
  {/* Add Company Card */}
- <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015] p-6 backdrop-blur-xl">
+ <div className="rounded-2xl border border-[#222] bg-[#0a0a0a] p-6 shadow-2xl">
  <div className="flex items-center gap-2 mb-6">
  <Building2 className="h-5 w-5 text-theme-1" />
- <h2 className="text-lg font-bold">Firma Ekle</h2>
+ <h2 className="text-xl font-bold">Firma Ekle</h2>
  </div>
  <form onSubmit={handleAddCompany} className="space-y-4">
  <div>
  <label className="block text-xs font-semibold text-zinc-400 mb-2 uppercase tracking-wider">Firma Adı</label>
- <input type="text" value={companyName} onChange={(e) => setCompanyName(e.target.value)} placeholder="Örn: Acme Corporation" required className="w-full px-4 py-3 rounded-xl bg-white/[0.015] border border-white/[0.06] text-white placeholder:text-zinc-600 text-sm focus:outline-none focus:ring-2 focus:ring-theme-1/30 transition-all" />
+ <input type="text" value={companyName} onChange={(e) => setCompanyName(e.target.value)} placeholder="Örn: Acme Corporation" required className="w-full px-4 py-3 rounded-xl bg-[#111] border border-[#333] text-white placeholder:text-zinc-600 text-sm focus:outline-none focus:ring-2 focus:ring-theme-1/30 transition-all" />
  </div>
  <button type="submit" disabled={actionLoading === "add_company"} className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-theme-1 hover:bg-theme-1 text-white font-semibold text-sm transition-all duration-200 disabled:opacity-50">
  {actionLoading === "add_company" ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Plus className="h-4 w-4" /> Firma Oluştur</>}
@@ -322,15 +350,15 @@ export default function SuperAdminDashboard(): React.JSX.Element {
  </div>
 
  {/* Add HR User Card */}
- <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015] p-6 backdrop-blur-xl">
+ <div className="rounded-2xl border border-[#222] bg-[#0a0a0a] p-6 shadow-2xl">
  <div className="flex items-center gap-2 mb-6">
  <Users className="h-5 w-5 text-theme-2" />
- <h2 className="text-lg font-bold">İK Kullanıcısı Ekle</h2>
+ <h2 className="text-xl font-bold">İK Kullanıcısı Ekle</h2>
  </div>
  <form onSubmit={handleAddHRUser} className="space-y-4">
  <div>
  <label className="block text-xs font-semibold text-zinc-400 mb-2 uppercase tracking-wider">Firma Seçin</label>
- <select value={selectedCompanyId} onChange={(e) => setSelectedCompanyId(e.target.value)} required className="w-full px-4 py-3 rounded-xl bg-zinc-900 border border-white/[0.06] text-white text-sm focus:outline-none focus:ring-2 focus:ring-theme-2/30 transition-all">
+ <select value={selectedCompanyId} onChange={(e) => setSelectedCompanyId(e.target.value)} required className="w-full px-4 py-3 rounded-xl bg-[#111] border border-[#333] text-white text-sm focus:outline-none focus:ring-2 focus:ring-theme-2/30 transition-all">
  <option value="">Seçiniz...</option>
  {companies.map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}
  </select>
@@ -339,21 +367,21 @@ export default function SuperAdminDashboard(): React.JSX.Element {
  <label className="block text-xs font-semibold text-zinc-400 mb-2 uppercase tracking-wider">Ad Soyad</label>
  <div className="relative">
  <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600" />
- <input type="text" value={hrName} onChange={(e) => setHrName(e.target.value)} placeholder="Ad Soyad" required className="w-full pl-11 pr-4 py-3 rounded-xl bg-white/[0.015] border border-white/[0.06] text-white placeholder:text-zinc-600 text-sm focus:outline-none focus:ring-2 focus:ring-theme-2/30 transition-all" />
+ <input type="text" value={hrName} onChange={(e) => setHrName(e.target.value)} placeholder="Ad Soyad" required className="w-full pl-11 pr-4 py-3 rounded-xl bg-[#111] border border-[#333] text-white placeholder:text-zinc-600 text-sm focus:outline-none focus:ring-2 focus:ring-theme-2/30 transition-all" />
  </div>
  </div>
  <div>
  <label className="block text-xs font-semibold text-zinc-400 mb-2 uppercase tracking-wider">E-posta Adresi</label>
  <div className="relative">
  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600" />
- <input type="email" value={hrEmail} onChange={(e) => setHrEmail(e.target.value)} placeholder="ik@firma.com" required className="w-full pl-11 pr-4 py-3 rounded-xl bg-white/[0.015] border border-white/[0.06] text-white placeholder:text-zinc-600 text-sm focus:outline-none focus:ring-2 focus:ring-theme-2/30 transition-all" />
+ <input type="email" value={hrEmail} onChange={(e) => setHrEmail(e.target.value)} placeholder="ik@firma.com" required className="w-full pl-11 pr-4 py-3 rounded-xl bg-[#111] border border-[#333] text-white placeholder:text-zinc-600 text-sm focus:outline-none focus:ring-2 focus:ring-theme-2/30 transition-all" />
  </div>
  </div>
  <div>
  <label className="block text-xs font-semibold text-zinc-400 mb-2 uppercase tracking-wider">Geçici Şifre</label>
  <div className="relative">
  <Key className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600" />
- <input type="password" value={hrPassword} onChange={(e) => setHrPassword(e.target.value)} placeholder="••••••••" required className="w-full pl-11 pr-4 py-3 rounded-xl bg-white/[0.015] border border-white/[0.06] text-white placeholder:text-zinc-600 text-sm focus:outline-none focus:ring-2 focus:ring-theme-2/30 transition-all" />
+ <input type="password" value={hrPassword} onChange={(e) => setHrPassword(e.target.value)} placeholder="••••••••" required className="w-full pl-11 pr-4 py-3 rounded-xl bg-[#111] border border-[#333] text-white placeholder:text-zinc-600 text-sm focus:outline-none focus:ring-2 focus:ring-theme-2/30 transition-all" />
  </div>
  </div>
  <button type="submit" disabled={actionLoading === "add_hr"} className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-theme-2 hover:bg-theme-2 text-white font-semibold text-sm transition-all duration-200 disabled:opacity-50">
@@ -366,8 +394,8 @@ export default function SuperAdminDashboard(): React.JSX.Element {
  {/* Lists Section */}
  <div className="lg:col-span-7 space-y-6">
  {/* Companies list */}
- <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015] p-6 backdrop-blur-xl">
- <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+ <div className="rounded-2xl border border-[#222] bg-[#0a0a0a] p-6 shadow-2xl">
+ <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
  <Building2 className="h-5 w-5 text-theme-1" />
  Kayıtlı Firmalar
  </h3>
@@ -378,8 +406,7 @@ export default function SuperAdminDashboard(): React.JSX.Element {
  {companies.map((c) => (
  <div key={c.id} className="flex items-center justify-between py-3">
  <div>
- <p className="text-sm font-semibold">{c.name}</p>
- <p className="text-[10px] text-zinc-600">ID: {c.id}</p>
+ <p className="text-base font-semibold">{c.name}</p>
  </div>
  <button onClick={() => handleDeleteCompany(c.id)} disabled={actionLoading?.startsWith("delete_company_")} className="p-2 rounded-lg hover:bg-red-500/10 text-zinc-500 hover:text-red-400 transition-colors">
  <Trash2 className="h-4 w-4" />
@@ -391,8 +418,8 @@ export default function SuperAdminDashboard(): React.JSX.Element {
  </div>
 
  {/* HR Users List */}
- <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015] p-6 backdrop-blur-xl">
- <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+ <div className="rounded-2xl border border-[#222] bg-[#0a0a0a] p-6 shadow-2xl">
+ <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
  <Users className="h-5 w-5 text-theme-2" />
  İK Yetkilileri
  </h3>
@@ -403,9 +430,9 @@ export default function SuperAdminDashboard(): React.JSX.Element {
  {hrUsers.map((u) => (
  <div key={u.id} className="flex items-center justify-between py-3">
  <div>
- <p className="text-sm font-semibold">{u.fullName}</p>
- <p className="text-xs text-zinc-500">{u.email}</p>
- <p className="text-[10px] text-zinc-600">Firma: {u.companyName || u.companyId}</p>
+ <p className="text-base font-semibold">{u.fullName}</p>
+ <p className="text-sm text-zinc-400">{u.email}</p>
+ <p className="text-xs text-zinc-500">Firma: {u.companyName || "Bilinmiyor"}</p>
  </div>
  <button onClick={() => handleDeleteHRUser(u.id)} disabled={actionLoading?.startsWith("delete_hr_")} className="p-2 rounded-lg hover:bg-red-500/10 text-zinc-500 hover:text-red-400 transition-colors">
  <Trash2 className="h-4 w-4" />
@@ -417,8 +444,8 @@ export default function SuperAdminDashboard(): React.JSX.Element {
  </div>
 
  {/* Jobs List */}
- <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015] p-6 backdrop-blur-xl">
- <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+ <div className="rounded-2xl border border-[#222] bg-[#0a0a0a] p-6 shadow-2xl">
+ <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
  <Briefcase className="h-5 w-5 text-theme-1" />
  Tüm İş İlanları
  </h3>
@@ -429,9 +456,9 @@ export default function SuperAdminDashboard(): React.JSX.Element {
  {jobs.map((j) => (
  <div key={j.id} className="flex items-center justify-between py-3">
  <div>
- <p className="text-sm font-semibold">{j.title}</p>
- <p className="text-xs text-theme-1/80">{j.company.name}</p>
- <p className="text-[10px] text-zinc-600">ID: {j.id} - Durum: {j.status}</p>
+ <p className="text-base font-semibold">{j.title}</p>
+ <p className="text-sm text-theme-1/80">{j.company.name}</p>
+ <p className="text-xs text-zinc-500">Durum: {translateStatus(j.status)}</p>
  </div>
  <button onClick={() => handleDeleteJob(j.id)} disabled={actionLoading?.startsWith("delete_job_")} className="p-2 rounded-lg hover:bg-red-500/10 text-zinc-500 hover:text-red-400 transition-colors">
  <Trash2 className="h-4 w-4" />
@@ -443,31 +470,49 @@ export default function SuperAdminDashboard(): React.JSX.Element {
  </div>
 
  {/* Applications List */}
- <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015] p-6 backdrop-blur-xl">
- <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+ <div className="rounded-2xl border border-[#222] bg-[#0a0a0a] p-6 shadow-2xl">
+ <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
  <FileText className="h-5 w-5 text-theme-2" />
- Tüm Başvurular
+ Tüm Başvurular (Sadece Görüntüleme)
  </h3>
  {applications.length === 0 ? (
  <p className="text-sm text-zinc-600 py-4">Kayıtlı başvuru bulunamadı.</p>
  ) : (
- <div className="divide-y divide-white/[0.04] max-h-60 overflow-y-auto pr-2">
+ <div className="divide-y divide-white/[0.04] max-h-48 overflow-y-auto pr-2">
  {applications.map((a) => (
  <div key={a.id} className="flex items-center justify-between py-3">
  <div>
- <p className="text-sm font-semibold">{a.candidate.fullName}</p>
- <p className="text-xs text-zinc-500">{a.candidate.email}</p>
- <p className="text-[11px] text-theme-2/80 mt-0.5">{a.jobPosting.title} ({a.jobPosting.company.name})</p>
- <p className="text-[10px] text-zinc-600">Skor: {a.techScore || "Bekliyor"} | Durum: {a.status}</p>
+ <p className="text-base font-semibold">{a.candidate.fullName}</p>
+ <p className="text-sm text-zinc-400">{a.candidate.email}</p>
+ <p className="text-xs text-theme-2/80 mt-0.5">{a.jobPosting.title} ({a.jobPosting.company.name})</p>
+ <p className="text-xs text-zinc-500">Skor: {a.techScore || "Bekliyor"} | Durum: {translateStatus(a.status)}</p>
  </div>
- <div className="flex gap-2">
- <button onClick={() => handleDeleteApplication(a.id, false)} title="Sadece Başvuruyu Sil" disabled={actionLoading?.startsWith("delete_app_")} className="p-2 rounded-lg hover:bg-theme-2/10 text-zinc-500 hover:text-theme-2 transition-colors">
+ </div>
+ ))}
+ </div>
+ )}
+ </div>
+
+ {/* Candidates List */}
+ <div className="rounded-2xl border border-[#222] bg-[#0a0a0a] p-6 shadow-2xl">
+ <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+ <User className="h-5 w-5 text-theme-1" />
+ Sisteme Kayıtlı Adaylar
+ </h3>
+ {candidates.length === 0 ? (
+ <p className="text-sm text-zinc-600 py-4">Kayıtlı aday bulunamadı.</p>
+ ) : (
+ <div className="divide-y divide-white/[0.04] max-h-60 overflow-y-auto pr-2">
+ {candidates.map((c) => (
+ <div key={c.id} className="flex items-center justify-between py-3">
+ <div>
+ <p className="text-base font-semibold">{c.fullName}</p>
+ <p className="text-sm text-zinc-400">{c.email}</p>
+ <p className="text-xs text-zinc-500">Kayıt: {new Date(c.createdAt).toLocaleDateString("tr-TR")}</p>
+ </div>
+ <button onClick={() => handleDeleteCandidate(c.id)} disabled={actionLoading?.startsWith("delete_cand_")} className="p-2 rounded-lg hover:bg-red-500/10 text-zinc-500 hover:text-red-400 transition-colors">
  <Trash2 className="h-4 w-4" />
  </button>
- <button onClick={() => handleDeleteApplication(a.id, true)} title="Başvuruyu VE Adayı Sil" disabled={actionLoading?.startsWith("delete_app_")} className="px-3 py-1.5 rounded-lg border border-red-500/20 hover:bg-red-500/10 text-red-400 text-xs font-medium transition-colors">
- Adayı da Sil
- </button>
- </div>
  </div>
  ))}
  </div>

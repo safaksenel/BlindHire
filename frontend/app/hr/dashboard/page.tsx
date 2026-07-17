@@ -39,6 +39,21 @@ interface DashboardData {
   jobs: JobRow[];
 }
 
+const translateStatus = (status: string) => {
+  const map: Record<string, string> = {
+    ACTIVE: "Aktif",
+    SCHEDULED: "İleri Tarihli",
+    EXPIRED: "Süresi Dolmuş",
+    ARCHIVED: "Arşivlenmiş",
+    PENDING: "Beklemede",
+    INVITED: "Mülakata Davet Edildi",
+    INTERVIEW_INVITED: "Mülakata Davet Edildi",
+    REJECTED: "Reddedildi",
+    HIRED: "İşe Alındı",
+    COMPLETED: "Tamamlandı"
+  };
+  return map[status] || status;
+};
 
 export default function DashboardPage(): React.JSX.Element {
   const router = useRouter();
@@ -152,23 +167,6 @@ export default function DashboardPage(): React.JSX.Element {
   const toggleExpand = (id: string) => {
     if (expandedJobId === id) setExpandedJobId(null);
     else setExpandedJobId(id);
-  };
-
-  const handleDeleteUser = async (userId: string) => {
-    if (!confirm("Bu adayı (kullanıcıyı) sistemden kalıcı olarak silmek istediğinize emin misiniz? Bu işlem geri alınamaz!")) return;
-    try {
-      const res = await fetch(`/api/hr/users/${userId}`, {
-        method: "DELETE",
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Aday silinemedi.");
-      }
-      addToast("Aday sistemden başarıyla silindi.", "success");
-      await fetchData();
-    } catch (err: any) {
-      addToast(err.message, "error");
-    }
   };
 
   if (isLoading) {
@@ -395,22 +393,12 @@ export default function DashboardPage(): React.JSX.Element {
                                         </div>
                                         <div className="flex flex-col">
                                           <span className="text-xs font-medium text-white/80">{app.fullName}</span>
-                                          <span className="text-[10px] text-white/30">{app.status}</span>
+                                          <span className="text-[10px] text-white/30">{translateStatus(app.status)}</span>
                                         </div>
                                       </div>
                                       <div className="flex items-center gap-3 text-[10px] text-white/40">
                                         <span className="flex items-center gap-1" title="Algoritma Skoru"><Brain className="h-3 w-3"/> {app.techScore}</span>
                                         <span className="flex items-center gap-1" title="AI Skoru"><ShieldCheck className="h-3 w-3"/> {app.reliability}</span>
-                                        <button 
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleDeleteUser(app.id);
-                                          }}
-                                          className="ml-2 text-red-400/50 hover:text-red-400 transition-colors p-1"
-                                          title="Kullanıcıyı Sil"
-                                        >
-                                          <UserMinus className="h-3.5 w-3.5" />
-                                        </button>
                                       </div>
                                     </div>
                                   ))}
