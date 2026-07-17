@@ -82,3 +82,11 @@ prisma/dev.db-journal
  
 # KVKK/GDPR - User Uploads
 public/uploads/*
+public/uploads/
+
+# AI Guide
+PROJECT_STRUCTURE.md
+
+# Temporary folders
+scratch/
+scripts/

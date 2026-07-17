@@ -36,6 +36,7 @@ model User {
   role         String        @default("CANDIDATE")
   companyId    String?
   company      Company?      @relation("CompanyUsers", fields: [companyId], references: [id], onDelete: SetNull)
+  theme        String        @default("theme-1")
   
   applications Application[] @relation("CandidateApplications")
 
@@ -75,6 +76,8 @@ model Application {
   status       String     @default("PENDING")
   techScore    Int?
   reliability  Int?
+  interviewScore Int?
+  overallScore   Int?
   interviewId  String?
   interviewPassword String?
   createdAt    DateTime   @default(now())
@@ -82,14 +85,19 @@ model Application {
 }
 
 model HRSettings {
-  id                    String   @id @default(uuid())
-  companyId             String   @unique
-  company               Company  @relation("CompanySettings", fields: [companyId], references: [id], onDelete: Cascade)
-  autoInviteThreshold   Int      @default(80)
-  manualReviewThreshold Int      @default(60)
-  autoRejectThreshold   Int      @default(59)
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  id                         String   @id @default(uuid())
+  companyId                  String   @unique
+  company                    Company  @relation("CompanySettings", fields: [companyId], references: [id], onDelete: Cascade)
+  stage1AutoProceedThreshold Int      @default(75)
+  stage1AutoRejectThreshold  Int      @default(50)
+  stage2AutoInviteThreshold  Int      @default(75)
+  stage2AutoRejectThreshold  Int      @default(60)
+  stage3AutoProceedThreshold Int      @default(75)
+  stage3AutoRejectThreshold  Int      @default(50)
+  stage4AutoHireThreshold    Int      @default(80)
+  stage4AutoRejectThreshold  Int      @default(50)
+  createdAt                  DateTime @default(now())
+  updatedAt                  DateTime @updatedAt
 }
 
 model Education {

@@ -20,16 +20,54 @@ export async function GET(
       return NextResponse.json({ message: "Yetkisiz." }, { status: 403 });
     }
 
+    if (id.startsWith("cand-") || id.startsWith("app-")) {
+       return NextResponse.json({
+         id: id.startsWith("app-") ? id : `app-${id.replace("cand-", "")}`,
+         candidateId: id.startsWith("cand-") ? id : `cand-${id.replace("app-", "")}`,
+         fullName: "Sahte Aday Detayı",
+         email: "sahte.aday@test.com",
+         role: "Yazılım Geliştirici",
+         status: "COMPLETED",
+         techScore: 85,
+         reliability: 92,
+         interviewScore: 88,
+         overallScore: 89,
+         cvUrl: "/1783547632872_Bedirhan_ihtiyar_CV_TR.pdf",
+         radarData: [
+             { subject: "Anahtar Kelime Eşleşmesi", score: 85, fullMark: 100 },
+             { subject: "Semantik Analiz (AI)", score: 92, fullMark: 100 }
+         ]
+       });
+    }
+
     // Attempt to find by application ID first, then by candidate ID
     let application = await prisma.application.findUnique({
       where: { id },
-      include: { candidate: true, jobPosting: true }
+      include: { 
+        candidate: {
+          include: {
+            educations: true,
+            experiences: true,
+            skills: true
+          }
+        }, 
+        jobPosting: true 
+      }
     });
 
     if (!application) {
        application = await prisma.application.findFirst({
          where: { candidateId: id },
-         include: { candidate: true, jobPosting: true }
+         include: { 
+           candidate: {
+             include: {
+               educations: true,
+               experiences: true,
+               skills: true
+             }
+           }, 
+           jobPosting: true 
+         }
        });
        if (!application) return NextResponse.json({ message: "Başvuru bulunamadı." }, { status: 404 });
     }
@@ -39,8 +77,6 @@ export async function GET(
     }
 
     const candidate = application.candidate;
-    const baseScore = application.techScore || 85;
-    
     return NextResponse.json({
         id: application.id,
         candidateId: candidate?.id,
@@ -48,15 +84,17 @@ export async function GET(
         email: candidate?.email,
         role: application.jobPosting.title || "Bilinmeyen Pozisyon",
         status: application.status,
-        techScore: baseScore,
-        reliability: application.reliability || 95,
+        techScore: application.techScore || 0,
+        reliability: application.reliability || 0,
+        interviewScore: application.interviewScore || 0,
+        overallScore: application.overallScore || 0,
         cvUrl: application.cvUrl,
+        educations: candidate?.educations || [],
+        experiences: candidate?.experiences || [],
+        skills: candidate?.skills || null,
         radarData: [
-            { subject: "Algoritma", score: Math.min(100, baseScore + 2), fullMark: 100 },
-            { subject: "Mimari", score: Math.min(100, baseScore + 6), fullMark: 100 },
-            { subject: "Stres Yönetimi", score: Math.max(0, baseScore - 11), fullMark: 100 },
-            { subject: "İletişim", score: Math.min(100, baseScore + 3), fullMark: 100 },
-            { subject: "Güvenilirlik", score: application.reliability || 98, fullMark: 100 },
+            { subject: "Anahtar Kelime Eşleşmesi", score: application.techScore || 0, fullMark: 100 },
+            { subject: "Semantik Analiz (AI)", score: application.reliability || 0, fullMark: 100 }
         ]
     });
   } catch (err) {

@@ -71,7 +71,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       const apps = job.applications;
       totalCVs += apps.length;
       
-      const accepted = apps.filter(a => a.status === "APPROVED" || a.status === "COMPLETED").length;
+      const accepted = apps.filter(a => a.status === "HIRED").length;
       const rejected = apps.filter(a => a.status === "REJECTED").length;
       const interviewCount = apps.filter(a => a.status === "INVITED").length;
       passedCount += accepted;

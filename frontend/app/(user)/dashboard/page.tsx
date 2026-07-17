@@ -61,12 +61,12 @@ export default function CandidateDashboard(): React.JSX.Element {
  return (
  <main className="flex-1 flex flex-col p-8 pt-24 min-h-screen relative overflow-hidden">
  <div className="max-w-6xl mx-auto w-full relative z-10 flex flex-col bg-black/[0.35] backdrop-blur-md rounded-3xl border border-white/10 p-8 mb-8">
- <div className="flex items-center justify-between mb-8">
- <div>
- <h1 className="text-3xl font-bold tracking-tight mb-2 text-white">Hoş Geldiniz</h1>
- <p className="text-zinc-400">AgenticHR'ın otonom dünyasına hazır mısınız?</p>
- </div>
- </div>
+  <div className="flex items-center justify-between mb-8">
+    <div>
+      <h1 className="text-3xl font-bold tracking-tight mb-2 text-white">Hoş Geldiniz</h1>
+      <p className="text-zinc-400">BlindHire'ın otonom dünyasına hazır mısınız?</p>
+    </div>
+  </div>
 
  {error && (
  <div className="mb-6 rounded-lg border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-400 flex items-start gap-3">
@@ -139,10 +139,10 @@ export default function CandidateDashboard(): React.JSX.Element {
       <ArrowRight className="h-4 w-4" />
     </Link>
   ) : (
-    <button onClick={() => setSelectedApp(job.userApplication)} className={`inline-flex items-center gap-1.5 rounded-lg border ${t.border} ${t.bg} px-4 py-2 text-sm font-semibold ${t.text} transition-all hover:opacity-80 cursor-pointer shadow-lg`}>
+    <Link href={`/apply/${job.id}`} className={`inline-flex items-center gap-1.5 rounded-lg border ${t.border} ${t.bg} px-4 py-2 text-sm font-semibold ${t.text} transition-all hover:opacity-80 cursor-pointer shadow-lg`}>
       <Briefcase className="h-4 w-4" />
       Başvuruyu Görüntüle
-    </button>
+    </Link>
   )}
   </div>
   </motion.div>
@@ -150,59 +150,6 @@ export default function CandidateDashboard(): React.JSX.Element {
   </div>
   )}
  </div>
-
- {selectedApp && (
-   <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-     <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="relative w-full max-w-md bg-[#09090b] border border-white/10 rounded-2xl p-6 shadow-2xl">
-       <button onClick={() => setSelectedApp(null)} className="absolute top-4 right-4 text-zinc-400 hover:text-white"><X className="w-5 h-5"/></button>
-       <h2 className="text-xl font-bold mb-6 text-white">Başvuru Durumu</h2>
-       <div className="space-y-0">
-         <div className="flex gap-4">
-           <div className="flex flex-col items-center">
-             <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center text-green-400"><CheckCircle2 className="w-5 h-5"/></div>
-             <div className="w-0.5 h-10 bg-green-500/20 my-1"></div>
-           </div>
-           <div className="pb-6 pt-1">
-             <p className="font-semibold text-white">Başvuru Alındı</p>
-             <p className="text-sm text-zinc-400">Özgeçmişiniz sisteme başarıyla yüklendi.</p>
-           </div>
-         </div>
-         <div className="flex gap-4">
-           <div className="flex flex-col items-center">
-             <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center text-green-400"><CheckCircle2 className="w-5 h-5"/></div>
-             <div className="w-0.5 h-10 bg-white/10 my-1"></div>
-           </div>
-           <div className="pb-6 pt-1">
-             <p className="font-semibold text-white">Yapay Zeka İncelemesi</p>
-             <p className="text-sm text-zinc-400">Özgeçmişiniz yapay zeka tarafından değerlendirildi.</p>
-           </div>
-         </div>
-         <div className="flex gap-4">
-           <div className="flex flex-col items-center">
-             {selectedApp.status === "REJECTED" ? (
-               <div className="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center text-red-400"><X className="w-5 h-5"/></div>
-             ) : (selectedApp.status === "INTERVIEW_INVITED" || selectedApp.status === "INVITED") ? (
-               <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center text-green-400"><CheckCircle2 className="w-5 h-5"/></div>
-             ) : (
-               <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-zinc-400"><Loader2 className="w-4 h-4 animate-spin"/></div>
-             )}
-           </div>
-           <div className="pb-2 pt-1">
-             <p className="font-semibold text-white">Değerlendirme Sonucu</p>
-             <p className="text-sm text-zinc-400">
-               {selectedApp.status === "REJECTED" ? "Maalesef bu aşamada olumlu ilerleyemiyoruz." : (selectedApp.status === "INTERVIEW_INVITED" || selectedApp.status === "INVITED") ? "Tebrikler! Mülakata hak kazandınız." : "İnceleme süreciniz devam ediyor."}
-             </p>
-           </div>
-         </div>
-       </div>
-       {(selectedApp.status === "INTERVIEW_INVITED" || selectedApp.status === "INVITED") && (
-         <Link href={`/interview/${selectedApp.interviewId || 'default'}`} className="mt-8 flex w-full items-center justify-center gap-2 rounded-xl bg-green-500 px-4 py-3 text-sm font-bold text-black transition-all hover:bg-green-400">
-           Mülakata Gir <ArrowRight className="w-4 h-4" />
-         </Link>
-       )}
-     </motion.div>
-   </div>
- )}
  </main>
  );
 }

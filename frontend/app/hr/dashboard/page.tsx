@@ -2,7 +2,9 @@
 
 import React, { useState, useEffect } from "react";
 import { Briefcase, FileSearch, Trophy, Loader2, AlertTriangle, SearchX, Archive, Edit3, ChevronDown, ChevronUp, User, Clock, CalendarDays, Brain, ShieldCheck } from "lucide-react";
+import RichTextEditor from '@/components/RichTextEditor';
 import { motion, AnimatePresence } from "framer-motion";
+import { useRouter } from "next/navigation";
 import { useToast } from "@/components/ToastContext";
 
 interface Applicant {
@@ -37,7 +39,9 @@ interface DashboardData {
   jobs: JobRow[];
 }
 
+
 export default function DashboardPage(): React.JSX.Element {
+  const router = useRouter();
   const [data, setData] = useState<DashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -279,7 +283,7 @@ export default function DashboardPage(): React.JSX.Element {
                   <th className="px-6 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-white/20">Pozisyon</th>
                   <th className="px-6 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-white/20">Durum</th>
                   <th className="px-6 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-white/20">Tarihler</th>
-                  <th className="px-6 py-3 text-center text-[11px] font-semibold uppercase tracking-wider text-white/20">Toplam / Kabul / Red / Mülakat</th>
+                  <th className="px-6 py-3 text-center text-[11px] font-semibold uppercase tracking-wider text-white/20">Başvuru Durumları</th>
                   <th className="px-6 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-white/20">İşlem</th>
                 </tr>
               </thead>
@@ -295,18 +299,30 @@ export default function DashboardPage(): React.JSX.Element {
                         {job.computedStatus === "SCHEDULED" && <span className="inline-flex items-center gap-1.5 rounded-md border border-amber-500/20 bg-amber-500/10 px-2.5 py-1 text-sm font-semibold text-amber-400"><CalendarDays className="h-3.5 w-3.5" /> İleri Tarihli</span>}
                         {job.computedStatus === "EXPIRED" && <span className="inline-flex items-center gap-1.5 rounded-md border border-zinc-500/20 bg-zinc-500/10 px-2.5 py-1 text-xs font-medium text-zinc-400"><Archive className="h-3.5 w-3.5" /> Süresi Dolmuş</span>}
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex flex-col text-sm text-zinc-400 gap-1">
                           <span><span className="text-zinc-500 mr-1">Başlangıç:</span> {job.startDate}</span>
                           <span><span className="text-zinc-500 mr-1">Bitiş:</span> {job.endDate}</span>
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="flex items-center justify-center gap-2 text-sm font-semibold font-sans tracking-normal text-zinc-400">
-                          <span title="Toplam Başvuru">{job.totalApplicants}</span> /
-                          <span title="Kabul Edilen">{job.acceptedCount}</span> /
-                          <span title="Reddedilen">{job.rejectedCount}</span> /
-                          <span title="Mülakatta">{job.interviewCount}</span>
+                        <div className="flex items-center justify-center gap-2">
+                          <div className="flex flex-col items-center justify-center bg-white/[0.02] border border-white/5 px-3 py-1.5 rounded-lg min-w-[80px]">
+                            <span className="text-[10px] uppercase font-bold tracking-wider text-white/40 mb-0.5 whitespace-nowrap">Toplam</span>
+                            <span className="text-sm font-bold text-white/80">{job.totalApplicants}</span>
+                          </div>
+                          <div className="flex flex-col items-center justify-center bg-white/[0.02] border border-white/5 px-3 py-1.5 rounded-lg min-w-[80px]">
+                            <span className="text-[10px] uppercase font-bold tracking-wider text-white/40 mb-0.5 whitespace-nowrap">Devam Eden</span>
+                            <span className="text-sm font-bold text-white/80">{job.totalApplicants - job.acceptedCount - job.rejectedCount}</span>
+                          </div>
+                          <div className="flex flex-col items-center justify-center bg-white/[0.02] border border-white/5 px-3 py-1.5 rounded-lg min-w-[80px]">
+                            <span className="text-[10px] uppercase font-bold tracking-wider text-white/40 mb-0.5 whitespace-nowrap">Onaylanan</span>
+                            <span className="text-sm font-bold text-white/80">{job.acceptedCount}</span>
+                          </div>
+                          <div className="flex flex-col items-center justify-center bg-white/[0.02] border border-white/5 px-3 py-1.5 rounded-lg min-w-[80px]">
+                            <span className="text-[10px] uppercase font-bold tracking-wider text-white/40 mb-0.5 whitespace-nowrap">Reddedilen</span>
+                            <span className="text-sm font-bold text-white/80">{job.rejectedCount}</span>
+                          </div>
                         </div>
                       </td>
                       <td className="px-6 py-4">
@@ -366,8 +382,8 @@ export default function DashboardPage(): React.JSX.Element {
                                         </div>
                                       </div>
                                       <div className="flex gap-3 text-[10px] text-white/40">
-                                        <span className="flex items-center gap-1" title="Teknik Skor"><Brain className="h-3 w-3"/> {app.techScore}</span>
-                                        <span className="flex items-center gap-1" title="Güvenilirlik"><ShieldCheck className="h-3 w-3"/> {app.reliability}%</span>
+                                        <span className="flex items-center gap-1" title="Algoritma Skoru"><Brain className="h-3 w-3"/> {app.techScore}</span>
+                                        <span className="flex items-center gap-1" title="AI Skoru"><ShieldCheck className="h-3 w-3"/> {app.reliability}</span>
                                       </div>
                                     </div>
                                   ))}
@@ -391,7 +407,7 @@ export default function DashboardPage(): React.JSX.Element {
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="w-full max-w-md rounded-2xl border border-white/[0.06] bg-zinc-900 p-6 shadow-2xl"
+            className="w-full max-w-5xl rounded-2xl border border-white/[0.06] bg-zinc-900 p-8 shadow-2xl"
           >
             <h3 className="text-lg font-bold text-white mb-4">
               {editingJobId ? "İlanı Düzenle" : "Yeni İlan Oluştur"}
@@ -428,15 +444,12 @@ export default function DashboardPage(): React.JSX.Element {
                   />
                 </div>
               </div>
-              <div>
-                <label className="block text-xs font-semibold text-zinc-400 mb-1">Açıklama</label>
-                <textarea
-                  required
-                  rows={3}
+              <div className="group">
+                <label className="block text-xs font-semibold text-theme-1 mb-1 group-focus-within:text-theme-2 transition-colors">Açıklama (Zengin Metin)</label>
+                <RichTextEditor
                   value={jobDescription}
-                  onChange={(e) => setJobDescription(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl bg-white/[0.02] border border-white/[0.06] text-white text-sm focus:outline-none focus:border-theme-1/50 transition-colors resize-none"
-                  placeholder="İş ilanı detayları..."
+                  onChange={setJobDescription}
+                  placeholder="İş ilanı detayları (Şirket bilgisi, sorumluluklar, gereksinimler, yan haklar vb.)..."
                 />
               </div>
               <div className="flex justify-end gap-3 pt-4 border-t border-white/[0.06]">

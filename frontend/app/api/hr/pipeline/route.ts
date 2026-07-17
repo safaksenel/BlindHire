@@ -8,7 +8,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     const hrUser = await prisma.user.findUnique({ where: { id: userId } });
     if (!hrUser || hrUser.role !== "HR" || !hrUser.companyId) {
-      return NextResponse.json({ pending: [], manual_review: [], invited: [], completed: [] });
+      return NextResponse.json({ pending: [], llm_review: [], manual_review: [], invited: [], completed: [], hired: [] });
     }
 
     const companyId = hrUser.companyId;
@@ -16,6 +16,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const companyJobs = await prisma.jobPosting.findMany({
       where: { companyId },
       include: {
+        company: true,
         applications: {
           include: { candidate: true }
         }
@@ -23,7 +24,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     });
 
     const allApps = companyJobs.flatMap(job => 
-        job.applications.map(app => ({ ...app, jobTitle: job.title }))
+        job.applications.map(app => ({ ...app, jobTitle: job.title, companyName: job.company?.name || "Şirket" }))
     );
 
     const formatCard = (app: any) => ({
@@ -33,16 +34,21 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         email: app.candidate?.email || "Email Yok",
         cvUrl: app.cvUrl,
         role: app.jobTitle || "Bilinmeyen Pozisyon",
+        companyName: app.companyName || "Şirket",
         appliedAt: new Date(app.createdAt).toLocaleDateString("tr-TR"),
-        techScore: app.techScore || Math.floor(Math.random() * (90 - 60) + 60),
-        reliability: app.reliability || Math.floor(Math.random() * (100 - 80) + 80),
+        techScore: app.techScore,
+        reliability: app.reliability,
+        interviewScore: app.interviewScore,
+        overallScore: app.overallScore,
     });
 
     return NextResponse.json({
         pending: allApps.filter(a => a.status === "PENDING").map(formatCard),
+        llm_review: allApps.filter(a => a.status === "LLM_REVIEW").map(formatCard),
         manual_review: allApps.filter(a => a.status === "MANUAL_REVIEW").map(formatCard),
-        invited: allApps.filter(a => a.status === "INVITED").map(formatCard),
-        completed: allApps.filter(a => a.status === "COMPLETED").map(formatCard)
+        invited: allApps.filter(a => a.status === "INVITED" || a.status === "INTERVIEW_INVITED").map(formatCard),
+        completed: allApps.filter(a => a.status === "COMPLETED").map(formatCard),
+        hired: allApps.filter(a => a.status === "HIRED").map(formatCard)
     });
 
   } catch (err) {
@@ -58,18 +64,22 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     if (!userId) return NextResponse.json({ message: "Oturum açılmamış." }, { status: 401 });
 
-    const hrUser = await prisma.user.findUnique({ where: { id: userId } });
-    if (!hrUser || hrUser.role !== "HR" || !hrUser.companyId) {
-        return NextResponse.json({ message: "Yetkisiz." }, { status: 403 });
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+        return NextResponse.json({ message: "Kullanıcı bulunamadı." }, { status: 401 });
     }
 
     const application = await prisma.application.findUnique({
         where: { id: applicationId },
-        include: { jobPosting: true, candidate: true }
+        include: { jobPosting: { include: { company: true } }, candidate: true }
     });
 
     if (!application) return NextResponse.json({ message: "Başvuru bulunamadı." }, { status: 404 });
-    if (application.jobPosting.companyId !== hrUser.companyId) {
+
+    const isCandidate = application.candidateId === userId;
+    const isHR = user.role === "HR" && user.companyId === application.jobPosting.companyId;
+
+    if (!isCandidate && !isHR) {
         return NextResponse.json({ message: "Yetkisiz." }, { status: 403 });
     }
 
@@ -101,8 +111,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           body: JSON.stringify({
             email: application.candidate?.email,
             candidateName: application.candidate?.fullName,
+            companyName: application.jobPosting.company?.name || "Şirket",
             interviewLink: `${baseUrl}/interview/${interviewId}`,
             interviewPassword: pass,
+            themeId: user.theme // Passing the user's saved theme!
           })
         }).catch(e => console.error("Pipeline manual Mail Error:", e));
       } catch (e) {
@@ -127,8 +139,8 @@ export async function DELETE(request: NextRequest): Promise<NextResponse> {
     if (!userId) return NextResponse.json({ message: "Oturum açılmamış." }, { status: 401 });
     if (!id) return NextResponse.json({ message: "ID belirtilmedi." }, { status: 400 });
 
-    const hrUser = await prisma.user.findUnique({ where: { id: userId } });
-    if (!hrUser || hrUser.role !== "HR" || !hrUser.companyId) {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
       return NextResponse.json({ message: "Yetkisiz." }, { status: 403 });
     }
 
@@ -138,7 +150,11 @@ export async function DELETE(request: NextRequest): Promise<NextResponse> {
     });
 
     if (!application) return NextResponse.json({ message: "Başvuru bulunamadı." }, { status: 404 });
-    if (application.jobPosting.companyId !== hrUser.companyId) {
+
+    const isHr = user.role === "HR" && user.companyId === application.jobPosting.companyId;
+    const isOwner = application.candidateId === userId;
+
+    if (!isHr && !isOwner) {
       return NextResponse.json({ message: "Yetkisiz." }, { status: 403 });
     }
 

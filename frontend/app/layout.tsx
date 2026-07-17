@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AgenticHR.ai — Otonom AI İşe Alım Platformu",
+  title: "BlindHire — Otonom AI İşe Alım Platformu",
   description:
     "Sıfır önyargılı, otonom liyakat tabanlı AI mülakat ajanı. İnsan müdahalesiz, gerçek zamanlı işe alım.",
   robots: { index: true, follow: true },
