@@ -1,0 +1,23 @@
+# FastAPI Backend
+fastapi
+uvicorn[standard]
+websockets
+python-dotenv
+python-multipart
+
+# TTS (Text-to-Speech) — Microsoft Edge ücretsiz altyapısı
+edge-tts
+
+# ASR (Speech-to-Text) — Groq Whisper
+groq
+
+# Lip-Sync — HuggingFace Space bağlantısı
+gradio_client
+
+# LLM Orkestrasyon (ai_agent modülü için)
+langchain
+langchain-groq
+langchain-community
+langchain-huggingface
+sentence-transformers
+faiss-cpu

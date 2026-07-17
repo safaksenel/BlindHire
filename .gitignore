@@ -16,6 +16,8 @@ __pycache__/
 .agents/
 .vscode/
 ai_agent/durum.md
+backend/api/static/cache/
+backend/api/venv/
 
 # AI Guide
 frontend/PROJECT_STRUCTURE.md
