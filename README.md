@@ -98,8 +98,66 @@ Sprint boyunca Slack kanalları, Whatsapp ve anlık online toplantılar üzerind
 * **Neleri Geliştirmeliyiz? **
     * Takım üyelerinin yerelde tamamladığı kod bloklarını ana repoya pushlama ve birleştirme (merge) zamanlamalarını biraz daha erkene çekmeliyiz.
     * Bootcamp mentorlarımızın geri bildirimlerini dikkate alarak, sonraki sprintte Slack kanallarındaki anlık durum güncellemelerini ve asenkron Daily paylaşımlarını daha sıkı bir disipline oturtmalıyız.
-* **Aksiyon Planı:**
-    * Sprint 2'de Utku'nun geliştirdiği görsel analiz modülleri, Bedirhan'ın arayüzüne ve Şafak'ın entegrasyon mimarisine tam olarak gömülecek.
-    * Slack kanallarının aktif kullanımı adına Scrum Master liderliğinde günlük yazılı durum check-in'leri başlatılacak.
-    * Melih tarafından geliştirilen LLM Orkestratörü içerisine Sprint 2'de RAG (Retrieval-Augmented Generation) mimarisi entegre edilecek ve adayın söz kesme (interrupt) senaryolarını yönetecek yapı kurgulanacak
-      
+ 
+## Sprint 2
+
+### 1. Backlog Düzeni ve Story Seçimleri (Sprint Backlog)
+
+Sprint 2 planlama toplantısında, BlindHire platformunun prototip aşamasından çıkıp endüstriyel standartlarda bir yapay zeka ürününe evrilmesi hedeflenmiştir. Takım, otonom karar mekanizmaları, gelişmiş bilgisayarlı görü algoritmaları ve gerçek zamanlı senkronizasyon yetenekleri üzerinde yoğunlaşarak Trello üzerinde şu iş kalemlerini önceliklendirmiştir:
+
+* **Story 1 (Epic: Computer Vision / Gelişmiş Görsel Analiz & Backend Entegrasyonu):** Bir yapay zeka geliştiricisi olarak, kamera tabanlı odak analizi modelinin doğruluğunu artırmak, adayın ekrana bakıp bakmadığını ve anlık göz hareketlerini (eye-tracking navigation) daha hassas algılayacak algoritmaları optimize etmek ve bu analiz çıktılarını backend katmanına yapılandırılmış veri (Structured JSON Logs) olarak aktarmak istiyorum. (Status: Done | Developer: Utku)
+* **Story 2 (Epic: Conversational AI / Bilgi Tabanlı RAG & Söz Kesme Mimarisi):** Bir yapay zeka geliştiricisi olarak, LLM motorunun otonom karar verme ve objektif puanlama yeteneklerini artırmak için RAG (Retrieval-Augmented Generation) mimarisine geçiş yapmak, ajanın halüsinasyon (uydurma soru/cevap) üretmesini engellemek ve adayın konuşmayı kesmesi (interrupt) durumunda ajanın doğal, akıcı tepkiler verebileceği ses uyumlu altyapıyı Python/LangChain ile kurmak istiyorum. (Status: Done | Developer: Melih)
+* **Story 3 (Epic: Ses ve Görü Senkronizasyonu & Lip-Sync Optimizasyonu):** Bir sistem mimarı ve entegratör olarak, adayın konuşma akışı ile yapay zeka ajanının sesli yanıtları arasındaki ağ gecikmelerini (latency) minimize edecek senkronizasyon düzenlemelerini yapmak ve ajan yanıt verirken yapay zekanın görsel bileşenleri ile ses çıktısını eş zamanlı yürüten dudak senkronizasyonu (Lip-sync) matematiksel motorunu entegre etmek istiyorum. (Status: Done | Developer/Product Owner: Şafak)
+* **Story 4 (Epic: Web UI / Gelişmiş İK ve Aday Panelleri & Entegrasyon):** Bir frontend geliştiricisi olarak, mülakat bitiminde üretilen otonom Değerlendirme Skor Kartı (CV Scoring) ekranını zengin görsel bileşenlerle frontend arayüzüne taşımak, adaylara otomatik mülakat davetiyesi ve İK ekiplerine sonuç bildirim raporları ileten e-posta entegrasyonu (Mail Integration) altyapısını kurmak birtakım kullanıcı deneyimi iyileştirmeleri yapmak istiyorum. (Status: Done | Developer: Bedirhan)
+* **Story 5 (Epic: Süreç Çevikliği, Blokaj Kaldırma & Çapraz Fonksiyonel Risk Yönetimi):** Bir Scrum Master olarak, Sprint 1 aksiyon planına sadık kalarak takımı yönlendirmek, Trello panosundaki yeni mimari iş paketlerinin bağımlılıklarını (Melih'in RAG veri setleri ile Utku'nun backend log mekanizması) haritalandırmak, takımın anlık koordine olduğu WhatsApp kanalı ile dokümantasyon takibinin yapıldığı Slack kanalları arasındaki asenkron iletişim akışını ve Daily Scrum disiplinini sağlamak; modüllerin birleştirilmesi esnasında ortaya çıkan entegrasyon krizlerini proaktif olarak çözmek istiyorum. (Status: Done | Scrum Master: Simge)
+
+---
+
+### 2. Daily Scrum (Günlük Toplantı Özetleri)
+<img width="1917" height="952" alt="Ekran görüntüsü 2026-07-17 212603" src="https://github.com/user-attachments/assets/f826097f-b081-4aa3-8af1-7549ed6524fa" />
+
+Sprint 2 boyunca iletişim kanalları en yüksek verimlilikte kullanılmış, operasyonel olarak ağırlıklı tercih edilen WhatsApp grupları ile resmi dökümantasyon kanalı olan Slack senkronize bir şekilde işletilmiştir. Kritik aşamalardaki teknik durum özetleri şu şekildedir:
+
+* **Bedirhan (Web UI & Entegrasyon):** Yapay zeka ajanının ürettiği karmaşık metrikleri içeren "CV Scoring" (Aday Değerlendirme Karnesi) ekranını kullanıcı dostu, dinamik grafiklerle frontend arayüzünde inşa etti. Aday mülakat döngüsünün tetiklenmesi ve İK bilgilendirmeleri için e-posta servis şablonlarını (Mail Integration) sisteme başarıyla gömdü.
+* **Utku (Görsel Analiz):** Göz algılama ve ekrana odaklanma (attention tracking) modelinin doğruluk oranını (accuracy) geometrik yüz haritalandırma teknikleriyle en üst seviyeye çıkardı. Adayın ekrandan uzaklaştığı veya odağını kaybettiği anları yakalayan modeli optimize ederek, bu verileri Şafak'ın entegrasyon katmanına besleyecek gerçek zamanlı backend veri çıktısını (Structured JSON output) başarıyla hazırladı.
+* **Melih (LLM/AI & RAG Mimarisi):** Teknik mülakatların objektif değerlendirilmesi adına LangChain üzerinde RAG (Retrieval-Augmented Generation) mimarisini kurdu; böylece LLM ajanının önceden belirlenmiş teknik veri setlerine ve bilgi tabanına %100 bağlı kalarak uydurma cevaplar vermesini engelledi. Ayrıca ses modülüyle tam uyumlu çalışan, aday araya girdiğinde veya söz kestiğinde (interrupt) ajanın konuşmayı doğal bir şekilde durdurup adayı dinlemesini sağlayan otonom karar mekanizmasını Python altyapısında tamamladı.
+* **Şafak (Ses & Entegrasyon):** Utku'nun geliştirdiği gelişmiş görsel analiz logları ile Melih'in bilgi tabanlı RAG motorunu ana entegrasyon hattında birleştirdi. Ajanın ses yanıt hızıyla eş zamanlı çalışan matematiksel dudak senkronizasyonu (Lip-sync) motorunu entegre ederek tarayıcı tabanlı yapay zeka avatarının tamamen doğal görünmesini sağladı; veri iletimindeki senkronizasyon kaymalarını sıfıra indirdi.
+* **Simge (Scrum Master):** Takımın operasyonel olarak ağırlıklı kullandığı WhatsApp grupları ile resmi dökümantasyon kanalı olan Slack üzerindeki bilgi akışını senkronize ederek anlık iletişim kopukluklarını engelledi. Melih'in RAG mimarisine geçerken ihtiyaç duyduğu teknik veri kümesi entegrasyonu ile Şafak'ın dudak senkronizasyonu geliştirirken yaşadığı tarayıcı tabanlı gecikme (latency) krizlerinde araya girerek blokajları (blockers) çözdü. Çapraz fonksiyonel (cross-functional) ekiplerin kod birleştirme (merge) takvimini optimize ederek, kritik teslim öncesinde tüm teknik riskleri bertaraf etti ve sprint hedeflerine tam zamanında ulaşılmasını sağlayan stratejik lider oldu.
+
+---
+
+### 3. Sprint Board SS
+<img width="1597" height="817" alt="Ekran görüntüsü 2026-07-19 174255" src="https://github.com/user-attachments/assets/48ecc86e-3e77-414a-a163-4285c4d98096" />
+<img width="1911" height="790" alt="Ekran görüntüsü 2026-07-19 173941" src="https://github.com/user-attachments/assets/384d1c21-2a33-41da-8e63-e46c06b5e861" />
+
+
+### 4. Ürün Durumu SS (Product Increment)
+<img width="882" height="520" alt="Ekran görüntüsü 2026-07-19 174919" src="https://github.com/user-attachments/assets/419cb0c1-5bf2-4e2e-9856-1c29fc8ab02b" />
+
+<img width="1477" height="939" alt="WhatsApp Image 2026-07-08 at 15 43 07" src="https://github.com/user-attachments/assets/437ff917-6bbb-4e70-ac53-b14695229911" />
+
+<img width="447" height="549" alt="WhatsApp Image 2026-07-18 at 00 03 14" src="https://github.com/user-attachments/assets/641997fc-51c9-4da0-a689-fff249eea494" />
+
+<img width="1567" height="891" alt="WhatsApp Image 2026-07-19 at 17 29 26" src="https://github.com/user-attachments/assets/e795ac78-ffeb-4bf7-92a4-6d712ab5af99" />
+
+### 5. Sprint Review (Sprint Değerlendirmesi)
+
+* **Ne Hedeflendi?** İkinci sprint için temel hedefimiz; yapay zeka ajanımızın uydurma cevaplar vermesini engelleyecek bir bilgi tabanı (RAG) kurmak, göz takibi modelinin kararlılığını artırarak backend bağlantısını kurmak, mülakat sonu karnesini görselleştirmek ve ajanın ses-dudak senkronizasyonunu kusursuzlaştırmaktı.
+* **Ne Elde Edildi?** Planlanan tüm hedeflere eksiksiz ulaşıldı! BlindHire artık sadece konuşan bir yapay zeka değil; RAG mimarisi sayesinde kurumsal veri setlerine göre mülakat yapan, adayın sözünü kesmesini algılayabilen, dudak senkronizasyonuna sahip ve mülakat sonunda İK'ya otomatik mail ile detaylı karne sunabilen tam donanımlı bir B2B SaaS platformu haline geldi.
+
+---
+
+### 6. Sprint Retrospective (Sprint Özeleştirisi)
+
+* **Neleri İyi Yaptık?**
+  * Ağırlıklı olarak WhatsApp üzerinden yürüttüğümüz hızlı anlık mesajlaşma dinamizmini, Slack'teki resmi takiplere başarıyla yansıttık; böylece çift kanallı iletişimi verimli kullandık.
+  * Modüller arası bağımlılıkları (RAG, CV Backend Logları, Lip-Sync) çok doğru analiz ederek entegrasyon sürecini son güne bırakmadan kademeli olarak tamamladık.
+  * Platforma RAG ve otonom söz kesme yönetimi gibi ileri düzey AI yetenekleri ekleyerek projenin teknik değerini katladık.
+* **Neleri Geliştirmeliyiz?**
+  * RAG mimarisi için teknik veri setlerini hazırlarken harcadığımız zamanı optimize etmek adına sonraki aşamalarda veri toplama süreçlerini otomatikleştirmeliyiz.
+  * Çoklu yapay zeka modelleri (CV + RAG LLM + Audio API) aynı anda çalıştığı için tarayıcı üzerindeki yükü hafifletecek performans optimizasyonlarına odaklanmalıyız.
+
+* **Aksiyon Planı (Sprint 3 Hedefleri):**
+  * **Yerel Optimizasyon ve Refactoring:** Birden fazla ağır modelin (Göz takibi, RAG motoru ve ses API'leri) yerel makinede (local environment) çalışırken yarattığı tarayıcı yükünü hafifletmek adına performans ve bellek optimizasyonlarını gerçekleştirmek.
+  * **Yapay Zeka Çeşitliliği (DEI):** Mülakat değerlendirmelerinde yapay zekanın tarafsızlığını (bias check) ölçen algoritmaları devreye almak.
+  * **Kullanıcı Testleri:** Yerelde hazırlanan bu kararlı ve bütünleşik yapıyı gerçek beta kullanıcılarıyla test ederek platformun ilk gerçek mülakat deneyimi raporlarını toplamak.
