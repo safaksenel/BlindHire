@@ -153,13 +153,23 @@ Sprint 2 boyunca iletişim kanalları en yüksek verimlilikte kullanılmış, op
 
 
 ### 4. Ürün Durumu SS (Product Increment)
-<img width="882" height="520" alt="Ekran görüntüsü 2026-07-19 174919" src="https://github.com/user-attachments/assets/419cb0c1-5bf2-4e2e-9856-1c29fc8ab02b" />
-
-<img width="1477" height="939" alt="WhatsApp Image 2026-07-08 at 15 43 07" src="https://github.com/user-attachments/assets/437ff917-6bbb-4e70-ac53-b14695229911" />
-
-<img width="447" height="549" alt="WhatsApp Image 2026-07-18 at 00 03 14" src="https://github.com/user-attachments/assets/641997fc-51c9-4da0-a689-fff249eea494" />
-
-<img width="1567" height="891" alt="WhatsApp Image 2026-07-19 at 17 29 26" src="https://github.com/user-attachments/assets/e795ac78-ffeb-4bf7-92a4-6d712ab5af99" />
+<img width="1302" height="837" alt="WhatsApp Image 2026-07-19 at 19 57 00 (3)" src="https://github.com/user-attachments/assets/7e80e6d1-9385-45b8-a405-621b0b58828c" />
+<img width="1540" height="974" alt="WhatsApp Image 2026-07-19 at 20 01 04" src="https://github.com/user-attachments/assets/77a6c189-b246-4826-b795-7094a33b3414" />
+<img width="1539" height="1064" alt="WhatsApp Image 2026-07-19 at 20 01 05" src="https://github.com/user-attachments/assets/8bf566a9-dc3b-4c2c-b7ea-309a58a506d2" />
+<img width="1545" height="1065" alt="WhatsApp Image 2026-07-19 at 20 01 05 (1)" src="https://github.com/user-attachments/assets/52d76cf6-737f-4b11-ac8b-30431a839ea2" />
+<img width="1533" height="1163" alt="WhatsApp Image 2026-07-19 at 20 01 05 (2)" src="https://github.com/user-attachments/assets/0ec9163f-3a05-4330-a353-1531a58a7d94" />
+<img width="1098" height="1140" alt="WhatsApp Image 2026-07-19 at 20 01 05 (3)" src="https://github.com/user-attachments/assets/03e535ac-29b8-421d-9437-bf439ad54e0f" />
+<img width="846" height="509" alt="WhatsApp Image 2026-07-19 at 20 11 03" src="https://github.com/user-attachments/assets/771f58e4-ed52-4c70-b7fb-4eb7e52c6aab" />
+<img width="1242" height="881" alt="WhatsApp Image 2026-07-19 at 19 56 58" src="https://github.com/user-attachments/assets/bc13e325-5ce3-417f-a39c-19d68629408f" />
+<img width="1246" height="881" alt="WhatsApp Image 2026-07-19 at 19 56 58 (1)" src="https://github.com/user-attachments/assets/dc75d2c3-2579-466d-ae1c-78990b5e2541" />
+<img width="1253" height="882" alt="WhatsApp Image 2026-07-19 at 19 56 59" src="https://github.com/user-attachments/assets/8a5edac9-2cce-4de6-b9c3-88939159e4f1" />
+<img width="1245" height="880" alt="WhatsApp Image 2026-07-19 at 19 56 59 (1)" src="https://github.com/user-attachments/assets/18ced88e-968c-4a6a-8018-a2c9f82a967f" />
+<img width="861" height="852" alt="WhatsApp Image 2026-07-19 at 19 56 59 (2)" src="https://github.com/user-attachments/assets/ee6d5e82-e913-4cd5-9bcb-55d72b78ff15" />
+<img width="1211" height="966" alt="WhatsApp Image 2026-07-19 at 19 56 59 (3)" src="https://github.com/user-attachments/assets/0d85b4ba-a051-4379-b365-0f811fa7f1d8" />
+<img width="1598" height="829" alt="WhatsApp Image 2026-07-19 at 19 56 59 (4)" src="https://github.com/user-attachments/assets/28ece7ef-e5e8-48c1-8665-80b8c74b56e4" />
+<img width="1600" height="905" alt="WhatsApp Image 2026-07-19 at 19 57 00" src="https://github.com/user-attachments/assets/a983fef7-a576-4238-99b4-3a8c19beb46b" />
+<img width="1466" height="848" alt="WhatsApp Image 2026-07-19 at 19 57 00 (1)" src="https://github.com/user-attachments/assets/7c4235b1-7a24-4896-965d-de833e1261ed" />
+<img width="1447" height="822" alt="WhatsApp Image 2026-07-19 at 19 57 00 (2)" src="https://github.com/user-attachments/assets/cde18ac7-e593-4522-9085-73b12ce6881b" />
 
 ### 5. Sprint Review (Sprint Değerlendirmesi)
 
