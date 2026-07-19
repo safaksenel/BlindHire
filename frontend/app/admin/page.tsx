@@ -16,9 +16,15 @@ import {
  Loader2,
  AlertTriangle,
  CheckCircle2,
- Briefcase,
- FileText
 } from "lucide-react";
+import {
+  Briefcase,
+  FileText,
+  Edit2,
+  Check,
+  X
+} from "lucide-react";
+import { translateStatus } from "@/lib/utils";
 
 interface Candidate {
   id: string;
@@ -39,6 +45,7 @@ interface HRUser {
  email: string;
  companyId: string;
  companyName?: string;
+ role: string;
  createdAt: string;
 }
 
@@ -59,22 +66,6 @@ interface Application {
  createdAt: string;
 }
 
-const translateStatus = (status: string) => {
-  const map: Record<string, string> = {
-    ACTIVE: "Aktif",
-    SCHEDULED: "İleri Tarihli",
-    EXPIRED: "Süresi Dolmuş",
-    ARCHIVED: "Arşivlenmiş",
-    PENDING: "Beklemede",
-    INVITED: "Mülakata Davet Edildi",
-    INTERVIEW_INVITED: "Mülakata Davet Edildi",
-    REJECTED: "Reddedildi",
-    HIRED: "İşe Alındı",
-    COMPLETED: "Tamamlandı"
-  };
-  return map[status] || status;
-};
-
 export default function SuperAdminDashboard(): React.JSX.Element {
  const router = useRouter();
 
@@ -91,10 +82,13 @@ export default function SuperAdminDashboard(): React.JSX.Element {
 
  // Form states
  const [companyName, setCompanyName] = useState<string>("");
+ const [editingCompanyId, setEditingCompanyId] = useState<string | null>(null);
+ const [editCompanyName, setEditCompanyName] = useState<string>("");
  const [hrName, setHrName] = useState<string>("");
  const [hrEmail, setHrEmail] = useState<string>("");
  const [hrPassword, setHrPassword] = useState<string>("");
  const [selectedCompanyId, setSelectedCompanyId] = useState<string>("");
+ const [hrRole, setHrRole] = useState<string>("COMPANY_MANAGER");
 
  const fetchData = useCallback(async () => {
  setIsLoading(true);
@@ -168,6 +162,31 @@ export default function SuperAdminDashboard(): React.JSX.Element {
  }
  };
 
+ const handleUpdateCompany = async (id: string) => {
+    if (!editCompanyName.trim()) return;
+
+    setActionLoading(`edit_company_${id}`);
+    setError("");
+    setSuccess("");
+
+    try {
+      const response = await fetch(`/api/admin/companies`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, name: editCompanyName })
+      });
+      if (!response.ok) throw new Error((await response.json()).message || "Firma güncellenemedi.");
+
+      setSuccess("Firma adı başarıyla güncellendi.");
+      setEditingCompanyId(null);
+      void fetchData();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
  const handleAddHRUser = async (e: React.FormEvent) => {
  e.preventDefault();
  if (!hrName.trim() || !hrEmail.trim() || !hrPassword.trim() || !selectedCompanyId) {
@@ -188,37 +207,18 @@ export default function SuperAdminDashboard(): React.JSX.Element {
  email: hrEmail,
  password: hrPassword,
  companyId: selectedCompanyId,
+ role: "COMPANY_MANAGER",
  }),
  });
 
  const data = await response.json();
- if (!response.ok) throw new Error(data.message || "İK kullanıcısı oluşturulamadı.");
+ if (!response.ok) throw new Error(data.message || "Firma Yetkilisi oluşturulamadı.");
 
- setSuccess("İK kullanıcısı başarıyla oluşturuldu.");
+ setSuccess("Firma Yetkilisi başarıyla oluşturuldu.");
  setHrName("");
  setHrEmail("");
  setHrPassword("");
  setSelectedCompanyId("");
- void fetchData();
- } catch (err: any) {
- setError(err.message);
- } finally {
- setActionLoading(null);
- }
- };
-
- const handleDeleteCompany = async (id: string) => {
- if (!confirm("Bu firmayı silmek istediğinize emin misiniz? Bağlı İK kullanıcıları ve ilanlar da silinir (Cascade).")) return;
-
- setActionLoading(`delete_company_${id}`);
- setError("");
- setSuccess("");
-
- try {
- const response = await fetch(`/api/admin/companies?id=${id}`, { method: "DELETE" });
- if (!response.ok) throw new Error((await response.json()).message || "Firma silinemedi.");
-
- setSuccess("Firma silindi.");
  void fetchData();
  } catch (err: any) {
  setError(err.message);
@@ -292,13 +292,13 @@ export default function SuperAdminDashboard(): React.JSX.Element {
   <div className="max-w-7xl mx-auto">
  {/* Header */}
  <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-white/[0.06] pb-8 mb-12">
- <div className="flex items-center gap-3">
- <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-theme-1/10 border border-theme-1/20">
- <Shield className="h-6 w-6 text-theme-1" />
+ <div className="flex items-center gap-4">
+ <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-theme-1/20 to-theme-2/20 border border-theme-1/20">
+ <Shield className="h-7 w-7 text-theme-1" />
  </div>
  <div>
- <h1 className="text-3xl font-extrabold tracking-tight">Süper Admin Paneli</h1>
- <p className="text-sm text-zinc-500 mt-0.5">Tüm sistem veritabanı yönetim merkezi (CRUD)</p>
+ <h1 className="text-3xl font-extrabold tracking-tight text-white leading-none mb-1.5">BlindHire<span className="text-theme-1">.ai</span></h1>
+ <p className="text-[11px] font-bold tracking-[0.2em] text-white/40 uppercase">Süper Admin Paneli</p>
  </div>
  </div>
  <button onClick={handleLogout} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500/20 font-medium transition-colors">
@@ -349,13 +349,13 @@ export default function SuperAdminDashboard(): React.JSX.Element {
  </form>
  </div>
 
- {/* Add HR User Card */}
- <div className="rounded-2xl border border-[#222] bg-[#0a0a0a] p-6 shadow-2xl">
- <div className="flex items-center gap-2 mb-6">
- <Users className="h-5 w-5 text-theme-2" />
- <h2 className="text-xl font-bold">İK Kullanıcısı Ekle</h2>
+ {/* Add Company Manager Form */}
+ <div className="rounded-2xl border border-[#222] bg-[#0a0a0a] overflow-hidden shadow-2xl">
+ <div className="p-8 border-b border-white/[0.04]">
+  <h2 className="text-xl font-bold text-white mb-1">Firma Yetkilisi Ekle</h2>
+  <p className="text-sm text-zinc-400">Yeni bir firma yöneticisi hesabı oluşturun.</p>
  </div>
- <form onSubmit={handleAddHRUser} className="space-y-4">
+ <form onSubmit={handleAddHRUser} className="p-8 space-y-4">
  <div>
  <label className="block text-xs font-semibold text-zinc-400 mb-2 uppercase tracking-wider">Firma Seçin</label>
  <select value={selectedCompanyId} onChange={(e) => setSelectedCompanyId(e.target.value)} required className="w-full px-4 py-3 rounded-xl bg-[#111] border border-[#333] text-white text-sm focus:outline-none focus:ring-2 focus:ring-theme-2/30 transition-all">
@@ -403,16 +403,37 @@ export default function SuperAdminDashboard(): React.JSX.Element {
  <p className="text-sm text-zinc-600 py-4">Kayıtlı firma bulunamadı.</p>
  ) : (
  <div className="divide-y divide-white/[0.04] max-h-48 overflow-y-auto pr-2">
- {companies.map((c) => (
- <div key={c.id} className="flex items-center justify-between py-3">
- <div>
- <p className="text-base font-semibold">{c.name}</p>
- </div>
- <button onClick={() => handleDeleteCompany(c.id)} disabled={actionLoading?.startsWith("delete_company_")} className="p-2 rounded-lg hover:bg-red-500/10 text-zinc-500 hover:text-red-400 transition-colors">
- <Trash2 className="h-4 w-4" />
- </button>
- </div>
- ))}
+  {companies.map((c) => (
+  <div key={c.id} className="flex items-center justify-between py-3">
+  {editingCompanyId === c.id ? (
+    <div className="flex-1 flex items-center gap-2 mr-4">
+      <input 
+        autoFocus
+        type="text" 
+        value={editCompanyName} 
+        onChange={(e) => setEditCompanyName(e.target.value)} 
+        onKeyDown={(e) => { if(e.key === 'Enter') handleUpdateCompany(c.id); else if(e.key === 'Escape') setEditingCompanyId(null); }}
+        className="w-full px-3 py-1.5 rounded-lg bg-[#111] border border-[#333] text-white text-sm focus:outline-none focus:border-theme-1" 
+      />
+      <button onClick={() => handleUpdateCompany(c.id)} disabled={actionLoading?.startsWith("edit_company_")} className="p-1.5 rounded-md text-emerald-400 hover:bg-emerald-500/10">
+        {actionLoading?.startsWith("edit_company_") ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+      </button>
+      <button onClick={() => setEditingCompanyId(null)} className="p-1.5 rounded-md text-zinc-500 hover:bg-white/10">
+        <X className="h-4 w-4" />
+      </button>
+    </div>
+  ) : (
+    <>
+      <div>
+      <p className="text-base font-semibold">{c.name}</p>
+      </div>
+      <button onClick={() => { setEditingCompanyId(c.id); setEditCompanyName(c.name); }} disabled={actionLoading?.startsWith("edit_company_")} className="p-2 rounded-lg hover:bg-theme-1/10 text-zinc-500 hover:text-theme-1 transition-colors">
+      <Edit2 className="h-4 w-4" />
+      </button>
+    </>
+  )}
+  </div>
+  ))}
  </div>
  )}
  </div>
@@ -430,7 +451,12 @@ export default function SuperAdminDashboard(): React.JSX.Element {
  {hrUsers.map((u) => (
  <div key={u.id} className="flex items-center justify-between py-3">
  <div>
- <p className="text-base font-semibold">{u.fullName}</p>
+ <p className="text-base font-semibold">
+    {u.fullName} 
+    <span className="ml-2 text-[10px] px-2 py-0.5 rounded-full border border-white/10 bg-white/5 text-white/50">
+      {u.role === "COMPANY_MANAGER" ? "Yönetici" : "İK"}
+    </span>
+  </p>
  <p className="text-sm text-zinc-400">{u.email}</p>
  <p className="text-xs text-zinc-500">Firma: {u.companyName || "Bilinmiyor"}</p>
  </div>

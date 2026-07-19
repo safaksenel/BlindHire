@@ -9,8 +9,8 @@ import { AppLogo } from "./AppLogo";
 export function GlobalHeader({ isAuth }: { readonly isAuth?: boolean }) {
   const pathname = usePathname();
   
-  // Hide global marketing header on hr and admin panels
-  const isDashboard = pathname?.startsWith('/hr') || pathname?.startsWith('/admin') || pathname?.startsWith('/interview');
+  // Hide global marketing header on hr, admin, and company-manager panels
+  const isDashboard = pathname?.startsWith('/hr') || pathname?.startsWith('/admin') || pathname?.startsWith('/interview') || pathname?.startsWith('/company-manager');
 
   if (isDashboard) {
     return null;

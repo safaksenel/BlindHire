@@ -99,6 +99,15 @@ async def lifespan(app: FastAPI):
             except Exception as e:
                 logger.warning(f"[Prerender] '{text[:40]}...' ({voice}) sentezlenemedi: {e}")
 
+    # Mülakat modelini ve retriever'i önyükle
+    logger.info("[Retriever] NLP/Embedding modeli başlatılıyor (Bu işlem birkaç saniye sürebilir)...")
+    try:
+        from retriever import QuestionRetriever
+        QuestionRetriever()
+        logger.info("[Retriever] Model başarıyla yüklendi ve hazır!")
+    except Exception as e:
+        logger.error(f"[Retriever] Model yüklenirken hata oluştu: {e}")
+
     logger.info("[Prerender] Tamamlandı.")
     logger.info("=" * 60)
     logger.info("BlindHire Backend API hazır! → http://localhost:8000")

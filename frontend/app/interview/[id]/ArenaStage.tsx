@@ -111,7 +111,7 @@ function formatTime(seconds: number): string {
 /* ═══════════════════════════════════════════════════
    MAIN COMPONENT
    ═══════════════════════════════════════════════════ */
-export default function InterviewPage(): React.JSX.Element {
+export default function ArenaStage({ interviewId }: { interviewId: string }): React.JSX.Element {
   // ── State ──
   const [aiState, setAiState] = useState<AiState>("idle");
   const [timeLeft, setTimeLeft] = useState<number>(1800);
@@ -122,12 +122,13 @@ export default function InterviewPage(): React.JSX.Element {
   const [interviewStarted, setInterviewStarted] = useState<boolean>(false);
   const [voiceGender, setVoiceGender] = useState<VoiceGender>("male");
   const [transcript, setTranscript] = useState<TranscriptEntry[]>([]);
+  const [showExitConfirm, setShowExitConfirm] = useState<boolean>(false);
   const [currentAiText, setCurrentAiText] = useState<string>("");
   const [textInput, setTextInput] = useState<string>("");
   const [interviewState, setInterviewState] = useState<string>("");
   const [videoSrc, setVideoSrc] = useState<string>("");
   const [isCompleted, setIsCompleted] = useState<boolean>(false);
-  const [isMicMuted, setIsMicMuted] = useState<boolean>(true); // start muted (push-to-talk default)
+  const [isMicMuted, setIsMicMuted] = useState<boolean>(false); // start active by default
 
   // ── Refs ──
   const wsRef = useRef<WebSocket | null>(null);
@@ -139,6 +140,8 @@ export default function InterviewPage(): React.JSX.Element {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const transcriptEndRef = useRef<HTMLDivElement | null>(null);
+  const transcriptsRef = useRef<Record<number, string>>({});
+  const userVolumeBarRef = useRef<HTMLDivElement | null>(null);
 
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
@@ -177,6 +180,12 @@ export default function InterviewPage(): React.JSX.Element {
 
     isPlayingRef.current = true;
     setAiState("speaking");
+
+    if (transcriptsRef.current[next.index]) {
+      setCurrentAiText(transcriptsRef.current[next.index]);
+    } else {
+      setCurrentAiText("");
+    }
 
     if (next.type === "video" && videoRef.current) {
       setVideoSrc(next.url);
@@ -220,6 +229,9 @@ export default function InterviewPage(): React.JSX.Element {
 
   // ── WebSocket Connection ──
   const connectWebSocket = useCallback(() => {
+    if (wsRef.current && (wsRef.current.readyState === WebSocket.CONNECTING || wsRef.current.readyState === WebSocket.OPEN)) {
+      return wsRef.current;
+    }
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const wsUrl = `${protocol}//localhost:8000/ws/interview`;
 
@@ -254,7 +266,9 @@ export default function InterviewPage(): React.JSX.Element {
             break;
 
           case "transcript":
-            setCurrentAiText(msg.text);
+            if (msg.index !== undefined) {
+              transcriptsRef.current[msg.index] = msg.text;
+            }
             setTranscript((prev) => [
               ...prev,
               { sender: "ai", text: msg.text },
@@ -316,17 +330,23 @@ export default function InterviewPage(): React.JSX.Element {
 
   // ── Start Interview ──
   const startInterview = useCallback(() => {
-    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
-      connectWebSocket();
-      setTimeout(() => startInterview(), 1000);
-      return;
-    }
-
-    wsRef.current.send(
-      JSON.stringify({ type: "start", voice: voiceGender })
-    );
     setInterviewStarted(true);
     setAiState("thinking");
+
+    const attemptStart = () => {
+      if (!wsRef.current || wsRef.current.readyState === WebSocket.CLOSED) {
+        connectWebSocket();
+      }
+
+      if (wsRef.current?.readyState === WebSocket.OPEN) {
+        wsRef.current.send(
+          JSON.stringify({ type: "start", voice: voiceGender })
+        );
+      } else {
+        setTimeout(attemptStart, 500);
+      }
+    };
+    attemptStart();
   }, [voiceGender, connectWebSocket]);
 
   // ── Stop Mic Monitoring ──
@@ -418,7 +438,7 @@ export default function InterviewPage(): React.JSX.Element {
         });
         audioChunksRef.current = [];
 
-        if (audioBlob.size < 1000) return;
+        if (audioBlob.size < 50) return;
 
         const reader = new FileReader();
         reader.onloadend = () => {
@@ -438,6 +458,9 @@ export default function InterviewPage(): React.JSX.Element {
 
       // Web Audio VAD setup
       const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      if (audioCtx.state === "suspended") {
+        await audioCtx.resume();
+      }
       audioContextRef.current = audioCtx;
 
       const source = audioCtx.createMediaStreamSource(stream);
@@ -450,6 +473,7 @@ export default function InterviewPage(): React.JSX.Element {
       const dataArray = new Uint8Array(bufferLength);
 
       let silenceStart = Date.now();
+      let speechStart = 0;
       let speakingDetected = false;
 
       const checkVolume = () => {
@@ -462,28 +486,50 @@ export default function InterviewPage(): React.JSX.Element {
         }
         const average = sum / bufferLength;
 
-        // If average volume exceeds 15, user is talking
-        if (average > 15) {
+        if (userVolumeBarRef.current) {
+          userVolumeBarRef.current.style.width = `${Math.min((average / 50) * 100, 100)}%`;
+        }
+
+        // If average volume exceeds 18, user is talking
+        if (average > 18) {
           silenceStart = Date.now();
 
           if (isPlayingRef.current || aiState === "speaking") {
-            triggerInterrupt();
+            // Hoparlörden gelen AI sesinin mikrofon tarafından duyulup 
+            // sürekli interrupt atmasını (yankı döngüsü) engellemek için 
+            // sesli interrupt'ı devre dışı bırakıyoruz. Aday "Lafını Böl" butonunu kullanabilir.
+            return; 
           }
 
           if (!speakingDetected) {
             speakingDetected = true;
+            speechStart = Date.now();
             setAiState("listening");
+          } else {
+            // Force stop chunk if continuous speech exceeds 15 seconds
+            if (Date.now() - speechStart > 15000) {
+              speakingDetected = false;
+              if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+                mediaRecorderRef.current.stop();
+                setTimeout(() => {
+                  if (micStreamRef.current && !isMicMuted && mediaRecorderRef.current?.state === "inactive") {
+                    audioChunksRef.current = [];
+                    mediaRecorderRef.current.start();
+                  }
+                }, 100);
+              }
+            }
           }
         } else {
-          // Silence detection (1.5 seconds)
-          if (speakingDetected && (Date.now() - silenceStart > 1500)) {
+          // Silence detection (5 seconds)
+          if (speakingDetected && (Date.now() - silenceStart > 5000)) {
             speakingDetected = false;
             if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
               mediaRecorderRef.current.stop();
               setTimeout(() => {
-                if (micStreamRef.current && !isMicMuted) {
+                if (micStreamRef.current && !isMicMuted && mediaRecorderRef.current?.state === "inactive") {
                   audioChunksRef.current = [];
-                  mediaRecorderRef.current?.start();
+                  mediaRecorderRef.current.start();
                 }
               }, 100);
             }
@@ -659,8 +705,8 @@ export default function InterviewPage(): React.JSX.Element {
         >
           {/* Logo */}
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500/20 to-purple-500/20 border border-white/[0.06]">
-              <UserCircle className="h-7 w-7 text-cyan-400" />
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-theme-1/20 to-theme-2/20 border border-white/[0.06]">
+              <UserCircle className="h-7 w-7 text-theme-1" />
             </div>
             <div>
               <h1 className="text-2xl font-bold text-white/90">BlindHire</h1>
@@ -685,7 +731,7 @@ export default function InterviewPage(): React.JSX.Element {
                     onClick={() => setVoiceGender(gender)}
                     className={`flex flex-col items-center gap-2 rounded-xl border p-4 transition-all duration-300 ${
                       voiceGender === gender
-                        ? "border-cyan-500/30 bg-cyan-500/[0.08] text-cyan-400"
+                        ? "border-theme-1/30 bg-theme-1/[0.08] text-theme-1 shadow-[0_0_15px_rgba(var(--theme-1-rgb),0.1)]"
                         : "border-white/[0.06] bg-white/[0.02] text-white/40 hover:border-white/[0.1] hover:text-white/60"
                     }`}
                   >
@@ -702,12 +748,31 @@ export default function InterviewPage(): React.JSX.Element {
             </div>
 
             {/* Info */}
-            <div className="mb-6 rounded-lg border border-white/[0.04] bg-white/[0.01] p-3">
-              <p className="text-[11px] leading-relaxed text-white/30">
-                Bu mülakat tamamen anonim olarak gerçekleştirilecektir. İsminizi, 
-                cinsiyetinizi veya kişisel bilgilerinizi paylaşmayınız. Sadece teknik 
-                yetkinliğiniz değerlendirilecektir.
+            <div className="mb-6 rounded-lg border border-white/[0.04] bg-white/[0.01] p-3 space-y-3">
+              <p className="text-[11px] leading-relaxed text-white/40">
+                Bu mülakat tamamen anonimdir. İsminizi veya çalıştığınız kurumları paylaşmayınız. 
+                Sadece teknik yetkinliğiniz değerlendirilecektir.
               </p>
+              <div className="text-[11px] text-white/30">
+                <p className="font-semibold text-white/40 mb-1">Mülakat Aşamaları:</p>
+                <ul className="list-disc pl-4 space-y-0.5">
+                  <li>Deneyim ve Geçmiş</li>
+                  <li>Temel Kavramlar</li>
+                  <li>Sistem Tasarımı & Mimari</li>
+                  <li>Pratik Senaryo Çözümü</li>
+                </ul>
+              </div>
+              <div className="text-[11px] text-red-400/90 mt-3 border-t border-white/[0.04] pt-3 bg-red-500/[0.02] p-2 rounded-lg">
+                <p className="font-semibold text-red-500 mb-1 flex items-center gap-1.5">
+                  <ShieldAlert className="h-3.5 w-3.5" />
+                  Güvenlik ve Gözetim (Proctoring):
+                </p>
+                <ul className="list-disc pl-4 space-y-0.5 opacity-90">
+                  <li>Odadaki farklı sesler ve konuşmalar anlık analiz edilir.</li>
+                  <li>Göz takibi (Eye-tracking) ile ekrandan uzaklaşma veya başka yere bakma tespit edilir.</li>
+                  <li>Kopya çekme veya dışarıdan yardım alma girişimleri mülakatı sonlandırabilir.</li>
+                </ul>
+              </div>
             </div>
 
             {/* Start Button */}
@@ -717,7 +782,7 @@ export default function InterviewPage(): React.JSX.Element {
                 connectWebSocket();
                 setTimeout(() => startInterview(), 500);
               }}
-              className="w-full rounded-xl bg-gradient-to-r from-cyan-500/80 to-purple-500/80 py-3 text-sm font-bold text-white transition-all duration-300 hover:from-cyan-500 hover:to-purple-500 hover:shadow-lg hover:shadow-cyan-500/20"
+              className="w-full rounded-xl bg-gradient-to-r from-theme-1 to-theme-2 text-black py-3 text-sm font-bold transition-all duration-300 hover:brightness-110 shadow-lg shadow-theme-1/20"
             >
               Mülakatı Başlat
             </button>
@@ -780,13 +845,9 @@ export default function InterviewPage(): React.JSX.Element {
             </span>
           </div>
           <span className="text-sm font-medium text-white/40">
-            BlindHire Session
+            BlindHire
           </span>
-          {interviewState && (
-            <span className="rounded-md bg-white/[0.04] px-2 py-0.5 text-[10px] font-mono text-white/25">
-              {interviewState}
-            </span>
-          )}
+
         </div>
 
         {/* Center — Timer */}
@@ -803,13 +864,13 @@ export default function InterviewPage(): React.JSX.Element {
         </div>
 
         {/* Right — End session */}
-        <Link
-          href="/"
+        <button
+          onClick={() => setShowExitConfirm(true)}
           className="group flex items-center gap-2 rounded-lg border border-red-500/10 px-4 py-2 text-xs font-semibold text-red-400/60 transition-all duration-300 hover:border-red-500/30 hover:bg-red-500/[0.06] hover:text-red-400"
         >
           <LogOut className="h-3.5 w-3.5" />
           Mülakatı Bitir
-        </Link>
+        </button>
       </header>
 
       {/* ══════════════════════════════════════════════════
@@ -996,29 +1057,18 @@ export default function InterviewPage(): React.JSX.Element {
 
           {/* Current AI text and Interrupt button */}
           <AnimatePresence>
-            {aiState === "speaking" && (
+            {showTranscript && aiState === "speaking" && currentAiText && (
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
                 className="flex flex-col items-center gap-3 max-w-lg"
               >
-                {currentAiText && (
-                  <div className="rounded-xl border border-white/[0.04] bg-black/40 px-5 py-3 backdrop-blur-xl">
-                    <p className="text-center text-sm leading-relaxed text-white/50">
-                      {currentAiText}
-                    </p>
-                  </div>
-                )}
-                
-                <button
-                  type="button"
-                  onClick={handleManualInterrupt}
-                  className="flex items-center gap-2 rounded-lg border border-red-500/25 bg-red-500/[0.08] px-4 py-2 text-xs font-bold text-red-400 hover:bg-red-500/[0.15] hover:border-red-500/40 transition-all duration-300"
-                >
-                  <MicOff className="h-3.5 w-3.5" />
-                  Lafını Böl
-                </button>
+                <div className="rounded-xl border border-theme-1/10 bg-black/60 px-5 py-3 backdrop-blur-xl">
+                  <p className="text-center text-sm font-medium tracking-wide leading-relaxed text-white/90">
+                    {currentAiText}
+                  </p>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
@@ -1027,15 +1077,16 @@ export default function InterviewPage(): React.JSX.Element {
 
       {/* ══════════════════════════════════════════════════
           BOTTOM BAR
-         ═══════════════════════════════════════════════�        {/* Bottom controls */}
+         ══════════════════════════════════════════════════ */}
+        {/* Bottom controls */}
         <div className="flex items-center justify-center gap-3 border-t border-white/[0.04] px-6 py-4">
           {/* Transcript toggle */}
           <button
             type="button"
             onClick={() => setShowTranscript((prev) => !prev)}
-            className={`flex items-center gap-2 rounded-lg px-4 py-2.5 text-xs font-medium transition-all duration-300 ${
+            className={`flex items-center gap-2 rounded-lg px-4 py-2.5 text-xs font-bold transition-all duration-300 ${
               showTranscript
-                ? "border border-blue-500/20 bg-blue-500/[0.08] text-blue-400"
+                ? "border border-theme-1/40 bg-theme-1/[0.15] text-theme-1 shadow-[0_0_15px_rgba(var(--theme-1-rgb),0.2)]"
                 : "border border-white/[0.06] bg-white/[0.02] text-white/30 hover:border-white/[0.1] hover:bg-white/[0.04] hover:text-white/50"
             }`}
           >
@@ -1043,95 +1094,20 @@ export default function InterviewPage(): React.JSX.Element {
             Transkript
           </button>
 
-          {/* Microphone mode toggle */}
-          <button
-            type="button"
-            onClick={() => setIsMicMuted((prev) => !prev)}
-            className={`flex items-center gap-2 rounded-lg px-4 py-2.5 text-xs font-medium transition-all duration-300 ${
-              !isMicMuted
-                ? "border border-emerald-500/20 bg-emerald-500/[0.08] text-emerald-400"
-                : "border border-white/[0.06] bg-white/[0.02] text-white/30 hover:border-white/[0.1] hover:bg-white/[0.04] hover:text-white/50"
-            }`}
-          >
-            {!isMicMuted ? <Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
-            {!isMicMuted ? "Mikrofon Açık (Laf Bölme Aktif)" : "Mikrofon Kapalı"}
-          </button>
-
-          {/* Microphone button (Push-to-Talk) - only visible/enabled if isMicMuted is true */}
-          {isMicMuted && (
-            <button
-              type="button"
-              onClick={isRecording ? stopRecording : startRecording}
-              disabled={aiState === "thinking" || aiState === "speaking" || isCompleted}
-              className={`flex items-center gap-2 rounded-lg px-5 py-2.5 text-xs font-semibold transition-all duration-300 ${
-                isRecording
-                  ? "border border-red-500/30 bg-red-500/[0.12] text-red-400 animate-pulse"
-                  : "border border-cyan-500/20 bg-cyan-500/[0.08] text-cyan-400 hover:border-cyan-500/30 hover:bg-cyan-500/[0.12]"
-              } disabled:opacity-30 disabled:cursor-not-allowed`}
-            >
-              {isRecording ? (
-                <MicOff className="h-4 w-4" />
-              ) : (
-                <Mic className="h-4 w-4" />
-              )}
-              {isRecording ? "Kaydı Durdur" : "Konuş"}
-            </button>
-          )}
-
-          {/* Text input (fallback) */}
-          <div className="flex items-center gap-2">
-            <input
-              type="text"
-              value={textInput}
-              onChange={(e) => setTextInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && sendText()}
-              placeholder="Yazarak yanıtla..."
-              disabled={isCompleted}
-              className="w-48 rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2 text-xs text-white/60 placeholder-white/20 outline-none transition-all focus:border-white/[0.12] focus:bg-white/[0.04] disabled:opacity-30"
-            />
-            <button
-              type="button"
-              onClick={sendText}
-              disabled={!textInput.trim() || isCompleted}
-              className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/[0.06] bg-white/[0.02] text-white/30 transition-all hover:border-white/[0.1] hover:bg-white/[0.04] hover:text-white/50 disabled:opacity-30"
-            >
-              <Send className="h-3.5 w-3.5" />
-            </button>
-          </div>
-        </div>0/30 bg-red-500/[0.12] text-red-400 animate-pulse"
-                : "border border-cyan-500/20 bg-cyan-500/[0.08] text-cyan-400 hover:border-cyan-500/30 hover:bg-cyan-500/[0.12]"
-            } disabled:opacity-30 disabled:cursor-not-allowed`}
-          >
-            {isRecording ? (
-              <MicOff className="h-4 w-4" />
-            ) : (
-              <Mic className="h-4 w-4" />
-            )}
-            {isRecording ? "Kaydı Durdur" : "Konuş"}
-          </button>
-
-          {/* Text input (fallback) */}
-          <div className="flex items-center gap-2">
-            <input
-              type="text"
-              value={textInput}
-              onChange={(e) => setTextInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && sendText()}
-              placeholder="Yazarak yanıtla..."
-              disabled={isCompleted}
-              className="w-48 rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2 text-xs text-white/60 placeholder-white/20 outline-none transition-all focus:border-white/[0.12] focus:bg-white/[0.04] disabled:opacity-30"
-            />
-            <button
-              type="button"
-              onClick={sendText}
-              disabled={!textInput.trim() || isCompleted}
-              className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/[0.06] bg-white/[0.02] text-white/30 transition-all hover:border-white/[0.1] hover:bg-white/[0.04] hover:text-white/50 disabled:opacity-30"
-            >
-              <Send className="h-3.5 w-3.5" />
-            </button>
+          {/* User volume visualizer */}
+          <div className="flex h-[38px] flex-1 items-center rounded-lg border border-white/[0.04] bg-white/[0.01] px-4 max-w-sm">
+            <div className="flex items-center gap-3 w-full">
+              <Mic className="h-4 w-4 text-white/30" />
+              <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/[0.05]">
+                <div
+                  ref={userVolumeBarRef}
+                  className="h-full bg-gradient-to-r from-theme-1 to-theme-2 transition-all duration-75"
+                  style={{ width: "0%" }}
+                />
+              </div>
+            </div>
           </div>
         </div>
-      </div>
 
       {/* ══════════════════════════════════════════════════
           PROCTOR ALERT OVERLAY
@@ -1178,6 +1154,51 @@ export default function InterviewPage(): React.JSX.Element {
       </AnimatePresence>
 
       {/* ══════════════════════════════════════════════════
+          EXIT CONFIRM OVERLAY
+         ══════════════════════════════════════════════════ */}
+      <AnimatePresence>
+        {showExitConfirm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm px-4"
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="w-full max-w-sm rounded-2xl border border-white/10 bg-[#0a0a0f] p-6 shadow-2xl"
+            >
+              <div className="mb-4 flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-500/20">
+                  <LogOut className="h-5 w-5 text-red-500" />
+                </div>
+                <h3 className="text-lg font-semibold text-white">Mülakatı Bitir</h3>
+              </div>
+              <p className="mb-6 text-sm text-white/60">
+                Mülakatı bitirmek istediğinize emin misiniz? Bu işlem geri alınamaz ve mülakat anında sonlandırılır.
+              </p>
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => setShowExitConfirm(false)}
+                  className="rounded-lg border border-white/10 px-4 py-2 text-sm font-medium text-white/70 hover:bg-white/5 transition-all"
+                >
+                  İptal
+                </button>
+                <button
+                  onClick={() => window.location.href = "/"}
+                  className="rounded-lg bg-red-500 px-4 py-2 text-sm font-medium text-white hover:bg-red-600 transition-all shadow-lg shadow-red-500/20"
+                >
+                  Evet, Çıkış Yap
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ══════════════════════════════════════════════════
           COMPLETED OVERLAY
          ══════════════════════════════════════════════════ */}
       <AnimatePresence>
@@ -1217,7 +1238,7 @@ export default function InterviewPage(): React.JSX.Element {
               </p>
               <Link
                 href="/"
-                className="inline-block rounded-xl bg-gradient-to-r from-cyan-500/80 to-purple-500/80 px-8 py-3 text-sm font-bold text-white transition-all hover:from-cyan-500 hover:to-purple-500"
+                className="inline-block rounded-xl bg-gradient-to-r from-theme-1 to-theme-2 px-8 py-3 text-sm font-bold text-black transition-all hover:brightness-110 shadow-lg shadow-theme-1/20"
               >
                 Ana Sayfaya Dön
               </Link>

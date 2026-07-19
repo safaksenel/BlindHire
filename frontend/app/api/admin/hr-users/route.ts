@@ -4,7 +4,9 @@ import { prisma } from "@/lib/prisma";
 export async function GET(): Promise<NextResponse> {
   try {
     const hrUsers = await prisma.user.findMany({
-      where: { role: "HR" },
+      where: { 
+        role: { in: ["HR", "COMPANY_MANAGER"] } 
+      },
       include: { company: true },
       orderBy: { createdAt: "desc" },
     });
@@ -15,6 +17,7 @@ export async function GET(): Promise<NextResponse> {
       email: u.email,
       companyId: u.companyId,
       companyName: u.company?.name || "Belirsiz Şirket",
+      role: u.role,
       createdAt: u.createdAt,
     }));
 
@@ -27,11 +30,13 @@ export async function GET(): Promise<NextResponse> {
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    const { fullName, email, password, companyId } = await request.json();
+    const { fullName, email, password, companyId, role } = await request.json();
 
     if (!fullName || !email || !password || !companyId) {
       return NextResponse.json({ message: "Eksik parametre girdiniz." }, { status: 400 });
     }
+
+    const assignedRole = role === "COMPANY_MANAGER" ? "COMPANY_MANAGER" : "HR";
 
     const exists = await prisma.user.findUnique({
       where: { email: email.trim().toLowerCase() },
@@ -46,13 +51,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         fullName: fullName.trim(),
         email: email.trim().toLowerCase(),
         passwordHash: password, // Plain text to match login
-        role: "HR",
+        role: assignedRole,
         companyId,
       },
     });
 
     return NextResponse.json(
-      { id: newHrUser.id, fullName: newHrUser.fullName, email: newHrUser.email },
+      { id: newHrUser.id, fullName: newHrUser.fullName, email: newHrUser.email, role: newHrUser.role },
       { status: 201 }
     );
   } catch (error) {

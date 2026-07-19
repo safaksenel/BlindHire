@@ -1,7 +1,11 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Briefcase, FileSearch, Trophy, Loader2, AlertTriangle, SearchX, Archive, Edit3, ChevronDown, ChevronUp, User, Clock, CalendarDays, Brain, ShieldCheck, UserMinus } from "lucide-react";
+import { 
+  Users, Briefcase, Activity, CheckCircle, Clock, Search, Filter, 
+  ChevronRight, Sparkles, TrendingUp, AlertCircle, PlayCircle, Loader2, Play, FileSearch, Trophy, AlertTriangle, SearchX, Archive, Edit3, ChevronDown, ChevronUp, User, CalendarDays, Brain, ShieldCheck, UserMinus
+} from "lucide-react";
+import { translateStatus } from "@/lib/utils";
 import RichTextEditor from '@/components/RichTextEditor';
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
@@ -39,21 +43,7 @@ interface DashboardData {
   jobs: JobRow[];
 }
 
-const translateStatus = (status: string) => {
-  const map: Record<string, string> = {
-    ACTIVE: "Aktif",
-    SCHEDULED: "İleri Tarihli",
-    EXPIRED: "Süresi Dolmuş",
-    ARCHIVED: "Arşivlenmiş",
-    PENDING: "Beklemede",
-    INVITED: "Mülakata Davet Edildi",
-    INTERVIEW_INVITED: "Mülakata Davet Edildi",
-    REJECTED: "Reddedildi",
-    HIRED: "İşe Alındı",
-    COMPLETED: "Tamamlandı"
-  };
-  return map[status] || status;
-};
+
 
 export default function DashboardPage(): React.JSX.Element {
   const router = useRouter();
@@ -422,7 +412,7 @@ export default function DashboardPage(): React.JSX.Element {
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="w-full max-w-5xl rounded-2xl border border-white/[0.06] bg-zinc-900 p-8 shadow-2xl"
+            className="w-full max-w-5xl max-h-full overflow-y-auto rounded-2xl border border-white/[0.06] bg-zinc-900 p-8 shadow-2xl"
           >
             <h3 className="text-lg font-bold text-white mb-4">
               {editingJobId ? "İlanı Düzenle" : "Yeni İlan Oluştur"}

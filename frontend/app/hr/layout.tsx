@@ -4,7 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { PaletteSwitcher } from "@/components/PaletteSwitcher";
-import { LayoutDashboard, Kanban, Settings, User, ChevronRight, Shield, LogOut, Archive, FileText } from "lucide-react";
+import { LayoutDashboard, Kanban, Settings, User, ChevronRight, Shield, LogOut, Archive, FileText, Edit2, Loader2, Check, X, CalendarDays } from "lucide-react";
 
 interface HrLayoutProps {
   readonly children: React.ReactNode;
@@ -21,7 +21,6 @@ const NAV_ITEMS: readonly NavItem[] = [
   { href: "/hr/pipeline", label: "Aday Hunisi", icon: <Kanban className="h-4 w-4" /> },
   { href: "/hr/history/jobs", label: "İlan Geçmişi", icon: <Archive className="h-4 w-4" /> },
   { href: "/hr/history/applications", label: "Başvuru Geçmişi", icon: <FileText className="h-4 w-4" /> },
-  { href: "/hr/settings", label: "Ayarlar", icon: <Settings className="h-4 w-4" /> },
 ] as const;
 
 export default function HrLayout({ children }: HrLayoutProps): React.JSX.Element {
@@ -30,6 +29,9 @@ export default function HrLayout({ children }: HrLayoutProps): React.JSX.Element
   const router = useRouter();
   const [userName, setUserName] = useState("Kullanıcı");
   const [companyName, setCompanyName] = useState("");
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editNameValue, setEditNameValue] = useState("");
+  const [isSavingName, setIsSavingName] = useState(false);
 
   useEffect(() => {
     try {
@@ -64,22 +66,42 @@ export default function HrLayout({ children }: HrLayoutProps): React.JSX.Element
     router.refresh();
   };
 
+  const handleSaveName = async () => {
+    if (!editNameValue.trim() || editNameValue.trim() === userName) {
+      setIsEditingName(false);
+      return;
+    }
+
+    setIsSavingName(true);
+    try {
+      const res = await fetch("/api/hr/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fullName: editNameValue.trim() })
+      });
+      if (res.ok) {
+        setUserName(editNameValue.trim());
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsSavingName(false);
+      setIsEditingName(false);
+    }
+  };
+
   return (
     <div className="flex h-screen overflow-hidden bg-[#050508]">
       {/* Sidebar */}
       <aside className="hidden w-64 shrink-0 flex-col border-r border-white/[0.06] bg-[#08080d] md:flex">
         {/* Logo */}
         <div className="flex h-16 items-center gap-2.5 border-b border-white/[0.06] px-6">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-theme-1/20 to-theme-2/20 ring-1 ring-white/[0.06]">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-theme-1/20 to-theme-2/20 ring-1 ring-white/[0.06] shrink-0">
             <Shield className="h-4 w-4 text-theme-1" />
           </div>
           <div className="flex flex-col">
-            <span className="text-sm font-bold text-white">
-              BlindHire<span className="text-theme-1">.ai</span>
-            </span>
-            <span className="text-[10px] font-medium uppercase tracking-widest text-white/20">
-              Admin
-            </span>
+            <span className="text-base font-bold text-white tracking-wide leading-none">BlindHire<span className="text-theme-1">.ai</span></span>
+            <span className="text-[10px] font-bold text-white/30 tracking-[0.2em] uppercase mt-1">İK Panel</span>
           </div>
         </div>
 
@@ -129,9 +151,33 @@ export default function HrLayout({ children }: HrLayoutProps): React.JSX.Element
                   {companyName}
                 </span>
               )}
-              <span className="text-xs font-medium text-white/90 truncate">
-                {userName}
-              </span>
+              {isEditingName ? (
+                <div className="flex items-center gap-1">
+                  <input
+                    autoFocus
+                    type="text"
+                    value={editNameValue}
+                    onChange={(e) => setEditNameValue(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') handleSaveName(); else if (e.key === 'Escape') setIsEditingName(false); }}
+                    className="w-full px-1 py-0.5 bg-black/40 border border-white/20 rounded text-xs text-white focus:outline-none focus:border-theme-1"
+                  />
+                  <button onClick={handleSaveName} disabled={isSavingName} className="text-emerald-400 hover:text-emerald-300">
+                    {isSavingName ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
+                  </button>
+                  <button onClick={() => setIsEditingName(false)} className="text-white/40 hover:text-white">
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-medium text-white/90 truncate">
+                    {userName}
+                  </span>
+                  <button onClick={() => { setEditNameValue(userName); setIsEditingName(true); }} className="transition-opacity">
+                    <Edit2 className="h-3 w-3 text-white/40 hover:text-theme-1" />
+                  </button>
+                </div>
+              )}
               <span className="text-[10px] text-theme-1/80 font-medium">
                 İK Yönetici
               </span>

@@ -5,7 +5,6 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   serverExternalPackages: ['@prisma/client', 'prisma', 'pdf-parse'],
   devIndicators: {
-    appIsrStatus: false,
     buildActivity: false,
   },
   async rewrites() {

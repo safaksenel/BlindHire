@@ -2,6 +2,27 @@
 
 Takım BlindHire
 
+## 🚀 Kurulum ve Çalıştırma (Hızlı Başlangıç)
+
+Projeyi bilgisayarınızda çalıştırmak için aşağıdaki adımları izleyin:
+
+1. **Gereksinimler:** Sistemin çalışması için `.env` dosyasında `GROQ_API_KEY` ve (varsa) veritabanı ayarlarınızın tanımlı olması gerekir. (Örnek `.env.example` dosyasını kullanabilirsiniz).
+2. **Backend (Python/FastAPI):**
+   ```bash
+   cd backend
+   pip install -r requirements.txt
+   uvicorn api.main:app --reload --port 8000
+   ```
+3. **Frontend (Next.js/React):**
+   ```bash
+   cd frontend
+   npm install
+   npx prisma db push  # Veritabanı şemasını eşitlemek için
+   npm run dev
+   ```
+Sistem varsayılan olarak `http://localhost:3000` adresinde ayağa kalkacaktır.
+
+
 # Ürün İle İlgili Bilgiler
 
 ## Takım Elemanları

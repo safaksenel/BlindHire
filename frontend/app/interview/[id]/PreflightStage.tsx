@@ -339,14 +339,14 @@ export default function PreflightStage({
                     key={item.key}
                     className={`flex items-center gap-3 rounded-xl border px-4 py-3 transition-all duration-500 ${
                       checks[item.key]
-                        ? "border-emerald-500/15 bg-emerald-500/[0.04]"
+                        ? "border-theme-1/15 bg-theme-1/[0.04]"
                         : "border-white/[0.04] bg-white/[0.015]"
                     }`}
                   >
                     <div
                       className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-all duration-500 ${
                         checks[item.key]
-                          ? "bg-emerald-500/15 text-emerald-400"
+                          ? "bg-theme-1/15 text-theme-1"
                           : "bg-white/[0.04] text-white/20"
                       }`}
                     >
@@ -359,7 +359,7 @@ export default function PreflightStage({
                     <div className="flex-1">
                       <p
                         className={`text-sm font-medium transition-colors duration-500 ${
-                          checks[item.key] ? "text-emerald-300" : "text-white/50"
+                          checks[item.key] ? "text-theme-1" : "text-white/50"
                         }`}
                       >
                         {item.label}
@@ -374,7 +374,7 @@ export default function PreflightStage({
                       <motion.span
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
-                        className="text-[10px] font-semibold text-emerald-400/60"
+                        className="text-[10px] font-semibold text-theme-1/60"
                       >
                         TAMAM
                       </motion.span>
@@ -398,7 +398,7 @@ export default function PreflightStage({
                     <motion.div
                       className={`h-full rounded-full transition-colors duration-200 ${
                         audioLevel > AUDIO_THRESHOLD
-                          ? "bg-gradient-to-r from-emerald-500 to-green-400"
+                          ? "bg-gradient-to-r from-theme-1 to-theme-2"
                           : "bg-gradient-to-r from-theme-1 to-theme-3"
                       }`}
                       animate={{ width: `${Math.min((audioLevel / 80) * 100, 100)}%` }}
@@ -421,7 +421,7 @@ export default function PreflightStage({
               onClick={handleStart}
               className={`w-full rounded-xl px-6 py-4 text-sm font-semibold transition-all duration-300 ${
                 allPassed
-                  ? "bg-gradient-to-r from-emerald-600 to-green-500 text-white shadow-lg shadow-emerald-500/15 hover:shadow-emerald-500/25 hover:brightness-110"
+                  ? "bg-gradient-to-r from-theme-1 to-theme-2 text-black shadow-lg shadow-theme-1/15 hover:shadow-theme-1/25 hover:brightness-110"
                   : "cursor-not-allowed border border-white/[0.05] bg-black/20 text-white/15"
               }`}
             >
@@ -429,6 +429,15 @@ export default function PreflightStage({
                 <Play className="h-4 w-4" />
                 {allPassed ? "Mülakata Başla" : "Tüm kontroller bekleniyor..."}
               </span>
+            </button>
+
+            {/* Admin Bypass (Demo Test) */}
+            <button
+              type="button"
+              onClick={handleStart}
+              className="w-full rounded-xl border border-red-500/20 bg-red-500/[0.05] px-4 py-2 text-xs font-medium text-red-400 transition-colors hover:bg-red-500/10 hover:text-red-300"
+            >
+              🛠️ [Admin] Kontrolleri Atla (Demo Testi)
             </button>
           </div>
         </motion.div>

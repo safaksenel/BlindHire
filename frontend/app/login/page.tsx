@@ -85,6 +85,8 @@ function LoginInner(): React.JSX.Element {
         router.push(redirectPath);
       } else if (data.role === "SUPER_ADMIN") {
         router.push("/admin");
+      } else if (data.role === "COMPANY_MANAGER") {
+        router.push("/company-manager/dashboard");
       } else if (data.role === "HR") {
         router.push("/hr/dashboard");
       } else {

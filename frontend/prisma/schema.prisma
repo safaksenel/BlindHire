@@ -96,6 +96,7 @@ model HRSettings {
   stage3AutoRejectThreshold  Int      @default(50)
   stage4AutoHireThreshold    Int      @default(80)
   stage4AutoRejectThreshold  Int      @default(50)
+  autoApproveJobs            Boolean  @default(true)
   createdAt                  DateTime @default(now())
   updatedAt                  DateTime @updatedAt
 }

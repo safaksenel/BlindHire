@@ -35,20 +35,28 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 }
 
-export async function DELETE(request: NextRequest): Promise<NextResponse> {
+export async function PUT(request: NextRequest): Promise<NextResponse> {
   try {
-    const { searchParams } = new URL(request.url);
-    const id = searchParams.get("id");
+    const { id, name } = await request.json();
 
-    if (!id) {
-      return NextResponse.json({ message: "ID belirtilmedi." }, { status: 400 });
+    if (!id || !name || !name.trim()) {
+      return NextResponse.json({ message: "ID veya yeni ad geçersiz." }, { status: 400 });
     }
 
-    await prisma.company.delete({
-      where: { id }
+    const exists = await prisma.company.findUnique({
+      where: { name: name.trim() }
     });
 
-    return NextResponse.json({ message: "Firma silindi." });
+    if (exists && exists.id !== id) {
+      return NextResponse.json({ message: "Bu ada sahip başka bir firma zaten var." }, { status: 400 });
+    }
+
+    const updatedCompany = await prisma.company.update({
+      where: { id },
+      data: { name: name.trim() }
+    });
+
+    return NextResponse.json(updatedCompany);
   } catch (err) {
     return NextResponse.json({ message: "Sunucu hatası." }, { status: 500 });
   }

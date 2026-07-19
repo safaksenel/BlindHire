@@ -14,6 +14,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const { title, description, startDate, endDate } = await request.json();
     if (!title || !description) return NextResponse.json({ message: "Eksik parametre." }, { status: 400 });
 
+    const settings = await prisma.hRSettings.findUnique({
+      where: { companyId: hrUser.companyId }
+    });
+    
+    const autoApprove = settings ? settings.autoApproveJobs : true;
+    const initialStatus = autoApprove ? "ACTIVE" : "PENDING";
+
     const job = await prisma.jobPosting.create({
       data: {
         title,
@@ -21,6 +28,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         companyId: hrUser.companyId,
         startDate: startDate ? new Date(startDate) : null,
         endDate: endDate ? new Date(endDate) : null,
+        status: initialStatus
       }
     });
 

@@ -90,3 +90,8 @@ PROJECT_STRUCTURE.md
 # Temporary folders
 scratch/
 scripts/
+
+# Database files
+*.db
+prisma/dev.db
+*.sqlite

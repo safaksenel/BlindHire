@@ -59,13 +59,18 @@ class LipSyncService:
 
     def _get_client(self):
         """gradio_client'ı lazy-load ile başlatır."""
+        if getattr(self, "_space_is_down", False):
+            raise Exception(f"HuggingFace Space ({self.space_name}) is down. Skipping LipSync.")
+            
         if self._client is None:
             try:
                 from gradio_client import Client
+                # Düşük bir timeout ile başlatmayı dene
                 self._client = Client(self.space_name)
                 logger.info(f"[LipSync] HuggingFace Space bağlantısı kuruldu: {self.space_name}")
             except Exception as e:
-                logger.error(f"[LipSync] HuggingFace Space bağlantısı kurulamadı: {e}")
+                self._space_is_down = True
+                logger.error(f"[LipSync] HuggingFace Space bağlantısı kurulamadı: {e}. Audio-only moda geçiliyor.")
                 raise
         return self._client
 
