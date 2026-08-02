@@ -2,6 +2,10 @@
 
 Takım BlindHire
 
+> 🌐 **Canlı Demo / Live Test:** Projeyi canlıda incelemek için [https://blindhire-pcym.onrender.com](https://blindhire-pcym.onrender.com) adresini ziyaret edebilirsiniz. 
+> 
+> ⚠️ **Not:** Canlı ortam (Render) kısıtlamaları ve API kaynaklı bazı teknik sınırlandırmalar nedeniyle **sesli mülakat modülü bu sürümde aktif değildir**. Web arayüzü, başvuru akışları, otonom değerlendirme/skorlama mimarisi ve genel sistem özellikleri canlı ortamda aktif olarak incelenebilir. Mülakat modülünün tam performanslı ve kesintisiz testi için projenin **yerel ortamda (local)** çalıştırılması önerilmektedir.
+
 ## 🚀 Kurulum ve Çalıştırma (Hızlı Başlangıç)
 
 Projeyi bilgisayarınızda çalıştırmak için aşağıdaki adımları izleyin:
